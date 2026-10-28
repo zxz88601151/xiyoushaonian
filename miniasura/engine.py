@@ -74,7 +74,9 @@ def build_maps(text, cfg, monsters):
         for key in ([] if mons == "-" else mons.split(",")):
             base = cfg["monster." + key]
             fights.append({"key": key, "mon": {
-                "name": monsters[key][0], "intro": monsters[key][1],
+                # key 必须同时放进 mon：combat.battle 靠 mon["key"]=="boss"
+                # 判定 boss 战逃跑必失败，之前缺这一项导致 boss 也能逃跑。
+                "key": key, "name": monsters[key][0], "intro": monsters[key][1],
                 "hp": round(int(base["hp"]) * scale),
                 "atk": round(int(base["attack"]) * scale),
                 "exp": round(int(base["exp"]) * scale)}})
@@ -164,6 +166,13 @@ def run_game(io):
                 player["hp"] = player["max_hp"]   # 被老猴拖回水帘洞疗伤（死亡惩罚 V2.4 再做）
                 persist(fi, maps_cleared)          # 落盘败局：跨局败北计数才可能累积
                 io.say("\n你倒下了……老猴把你拖回水帘洞疗伤。存档已更新，练练再来。")
+                return
+            if result == "escaped":
+                # 逃跑语义（2026-10-28 补丁定版）：不算推进、不发通图、
+                # 不记击杀——只落盘到本场开打前的位置，回大厅后重打本场。
+                # 之前这里与 win 共用 fi += 1，导致一路逃跑也能通关。
+                persist(fi, maps_cleared)
+                io.say("\n你溜出了战场。这一场不算打过，回大厅后可重打。")
                 return
             if result == "win":
                 for q in tracker.on_event("win", f["key"]):

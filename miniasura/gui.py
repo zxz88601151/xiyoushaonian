@@ -48,10 +48,26 @@ class BattleWidget(QWidget):
         self.log.setReadOnly(True)
         self.prompt = QLabel("……")
 
+        # 2026-10-28 逃跑补丁：战斗按钮补“物品(4)”（之前 CLI 有、GUI 没有，
+        # 玩家在窗口里根本喝不了药）；技能按钮用 skills.txt 的真名，读不到才回退。
         self.act_row, self.act_btns = self.make_row(
-            (("普攻(1)", "1"), ("技能(2)", "2"), ("逃跑(3)", "3")))
+            (("普攻(1)", "1"), ("技能(2)", "2"), ("逃跑(3)", "3"), ("物品(4)", "4")))
+        try:
+            _texts = engine.load_texts()
+            _names = [v[0] for v in engine.parse_kv(_texts["skills.txt"]).values()]
+        except Exception:
+            _names = []
+        while len(_names) < 3:
+            _names.append("技能%d" % (len(_names) + 1))
         self.sk_row, self.sk_btns = self.make_row(
-            (("技能1", "1"), ("技能2", "2"), ("技能3", "3")))
+            tuple(("%s(%d)" % (n, i + 1), str(i + 1))
+                  for i, n in enumerate(_names[:3])))
+        # 对话 / 药水各给一排专按钮：之前这两类提示也亮着战斗按钮，
+        # 点“普攻”会被对话当成“看完”、被药水当成“血瓶”，容易误触。
+        self.dia_row, self.dia_btns = self.make_row(
+            (("继续", ""), ("略过(s)", "s")))
+        self.pot_row, self.pot_btns = self.make_row(
+            (("血瓶(1)", "1"), ("蓝瓶(2)", "2"), ("取消", "x")))
 
         self.entry = QLineEdit()
         self.entry.setPlaceholderText("输入数字后回车也可以")
@@ -67,6 +83,8 @@ class BattleWidget(QWidget):
         side.addWidget(back)
         side.addLayout(self.act_row)
         side.addLayout(self.sk_row)
+        side.addLayout(self.dia_row)
+        side.addLayout(self.pot_row)
         side.addWidget(self.entry)
         side.addStretch()
 
@@ -90,10 +108,15 @@ class BattleWidget(QWidget):
         return row, btns
 
     def set_buttons(self, on, skill=False):
-        for b in self.act_btns:
-            b.setEnabled(on and not skill)
-        for b in self.sk_btns:
-            b.setEnabled(on and skill)
+        # skill=True 保留旧调用兼容；新分流走 _set_mode。
+        self._set_mode(on, "skill" if skill else "act")
+
+    def _set_mode(self, on, mode):
+        rows = {"act": self.act_btns, "skill": self.sk_btns,
+                "dialogue": self.dia_btns, "potion": self.pot_btns}
+        for name, btns in rows.items():
+            for b in btns:
+                b.setEnabled(bool(on) and name == mode)
 
     def begin(self, wipe=False):
         if wipe and os.path.exists(engine.save.PATH):
@@ -118,9 +141,17 @@ class BattleWidget(QWidget):
             bridge.finished.emit()
 
     def on_ask(self, prompt):
-        skill = "选技能" in prompt
+        # 按提示词分流按钮排：只亮当前问题对应的那一排，其他排全暗。
+        if "选技能" in prompt:
+            mode = "skill"
+        elif "略过" in prompt:
+            mode = "dialogue"
+        elif "用什么" in prompt:
+            mode = "potion"
+        else:
+            mode = "act"
         self.prompt.setText(prompt)
-        self.set_buttons(True, skill)
+        self._set_mode(True, mode)
         if AUTO:
             item = AUTO.pop(0)
             QTimer.singleShot(50, lambda: self.answer(item))
