@@ -42,14 +42,17 @@ check("难度询问：1/2/3 与非法输入",
       loot.ask_difficulty(type("I", (), {"ask": lambda s, p: "2"})()) == 1
       and loot.ask_difficulty(type("I", (), {"ask": lambda s, p: "x"})()) == 0)
 
-# ── 门禁1b 迁移：v4 档 → schema 5，金币/难度补 0、旧字段不丢──
+# ── 门禁1b 迁移：v4 档 → schema 6（V2.4），金币/难度/保底符/强化补默认值、旧字段不丢──
 if os.path.exists("save.json"):
     os.remove("save.json")
 save.write_raw({"schema": 4, "user": "", "level": 14, "exp": 10, "hp": 100, "mp": 50,
-                "attack": 57, "next": 3, "week": 0, "playtime": 0})
+                "attack": 57, "next": 3, "week": 0, "playtime": 0,
+                "inventory": [{"slot": 0, "lv": 5, "quality": 0,
+                               "main": {"atk": 1, "hp": 0, "def": 0, "dodge": 0}, "affixes": []}]})
 d = save.load()
-check("v4→v5 迁移：schema 5、金币 0、难度 0、等级不丢",
-      d["schema"] == 5 and d["gold"] == 0 and d["difficulty"] == 0 and d["level"] == 14)
+check("v4→v6 迁移：schema 6、金币 0、难度 0、保底符 0、旧装备 enh=0、等级不丢",
+      d["schema"] == 6 and d["gold"] == 0 and d["difficulty"] == 0 and d["protect"] == 0
+      and d["inventory"][0]["enh"] == 0 and d["level"] == 14)
 os.remove("save.json")
 
 # ── 门禁2 掉落：掷中/掷不中/满包转仓库/品质加成封顶──

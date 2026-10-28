@@ -109,7 +109,7 @@ def run_game(io):
     state = save.load()
     week = base_playtime = maps_cleared = start = 0
     difficulty = None
-    gold_carry = 0
+    gold_carry = protect_carry = 0
     storage = []
     tracker = None
     if state and state.get("next", 0) >= total_fights():
@@ -121,7 +121,7 @@ def run_game(io):
                                state.get("quest_flags"), state.get("kills"))
         storage = state.get("storage", [])
         difficulty = loot.ask_difficulty(io)   # 新周目重问难度
-        gold_carry = state.get("gold", 0)      # 金币跨周目继承（与仓库同理）
+        gold_carry, protect_carry = state.get("gold", 0), state.get("protect", 0)  # 金币/保底符跨周目继承
         state = None        # 周目重开：等级回起点；任务/仓库/金币继承
     elif state:
         io.say(f"\n（读取存档：Lv.{state['level']}，已推进至第 {state.get('maps_cleared', 0) + 1} 图）")
@@ -134,7 +134,7 @@ def run_game(io):
         tracker = qsys.Tracker(qsys.load(texts["quests.txt"]),
                                state.get("quest_flags"), state.get("kills"))
         player = {"level": state["level"], "exp": state["exp"],
-                  "hp": state["hp"], "mp": state["mp"], "gold": state.get("gold", 0),
+                  "hp": state["hp"], "mp": state["mp"], "gold": state.get("gold", 0), "protect": state.get("protect", 0),
                   "inventory": state.get("inventory", []),
                   "equipment": state.get("equipment") or gear.empty_equipment(),
                   "potions": state.get("potions") or {"hp": 0, "mp": 0}}
@@ -142,7 +142,7 @@ def run_game(io):
         player["hp"] = min(player["hp"], player["max_hp"])
     if not state:
         player = {"level": cfg.getint("player", "level"), "exp": 0,
-                  "mp": cfg.getint("player", "mp"), "gold": gold_carry,
+                  "mp": cfg.getint("player", "mp"), "gold": gold_carry, "protect": protect_carry,
                   "inventory": [], "equipment": gear.empty_equipment(),
                   "potions": {"hp": 0, "mp": 0}}
         if tracker is None:
@@ -175,7 +175,8 @@ def run_game(io):
             if result == "dead":
                 for q in tracker.on_event("lose", f["key"]):   # 败北事件（门禁 Bug B）
                     rewards.apply_rewards(cfg, player, io, [q], storage)
-                player["hp"] = player["max_hp"]   # 被老猴拖回水帘洞疗伤（死亡惩罚 V2.4 再做）
+                rewards.apply_death_penalty(player, io)
+                player["hp"] = player["max_hp"]   # V2.4：先扣 10% 经验，再满血拖回水帘洞疗伤
                 persist(fi, maps_cleared)          # 落盘败局：跨局败北计数才可能累积
                 io.say("\n你倒下了……老猴把你拖回水帘洞疗伤。存档已更新，练练再来。")
                 return
@@ -208,8 +209,7 @@ def run_game(io):
     io.say(f"地图推进 {maps_cleared}/{len(maps)}   第 {week} 周目   "
            f"击杀合计 {sum(v for k, v in tracker.kills.items() if not k.startswith('lose:'))}")
     io.say(f"金币 {player.get('gold', 0)}   难度 {loot.DIFF_NAMES[difficulty]}")
-    io.say("击杀：" + " ".join(f"{monsters[k][0]}x{v}" for k, v in tracker.kills.items()
-                              if not k.startswith("lose:")) or "击杀：无")
+    io.say("击杀：" + " ".join(f"{monsters[k][0]}x{v}" for k, v in tracker.kills.items() if not k.startswith("lose:")) or "击杀：无")
 
 
 def main():

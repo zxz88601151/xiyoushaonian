@@ -71,7 +71,7 @@ def generate(slot, lv, quality, rows=None, rng=random):
         raise ValueError(f"品质必须是 0/1/2（白/蓝/紫），收到 {quality}")
     si = SLOTS.index(slot)
     main = lua("main", si, lv, q)
-    item = {"slot": si, "lv": int(lv), "quality": q,
+    item = {"slot": si, "lv": int(lv), "quality": q, "enh": 0,
             "main": {k: main[k] for k in ("atk", "hp", "def", "dodge")},
             "affixes": []}
     used = set()
@@ -88,7 +88,10 @@ def generate(slot, lv, quality, rows=None, rng=random):
 
 
 def item_name(item):
-    return f"{QUALITY_NAMES[item['quality']]}·{SLOT_NAMES[SLOTS[item['slot']]]} Lv{item['lv']}"
+    name = f"{QUALITY_NAMES[item['quality']]}·{SLOT_NAMES[SLOTS[item['slot']]]} Lv{item['lv']}"
+    if item.get("enh", 0):
+        name += f" +{item['enh']}"
+    return name
 
 
 def item_line(item):
@@ -115,8 +118,10 @@ def totals(equipment):
     for it in equipment.values():
         if not it:
             continue
+        # V2.4 强化：主属性 atk/hp/def × (1 + 0.05 × enh)，闪避与词条不乘。
+        mult = 1 + 0.05 * it.get("enh", 0)
         for k, v in it["main"].items():
-            base[k] += v
+            base[k] += v * mult if k != "dodge" else v
         for a in it["affixes"]:
             if a["key"] in ("atkflat", "defflat"):
                 base["atk" if a["key"] == "atkflat" else "def"] += a["val"]

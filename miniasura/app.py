@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QApplication, QStackedWidget
 
 import gui
 import gui_bag
+import gui_enhance
 import gui_quests
 import gui_shop
 import login
@@ -26,15 +27,17 @@ class App(QStackedWidget):
         self.server = ServerWindow(self.pick_server)
         self.slotsw = SlotsWindow(self.pick_slot, self.to_server)
         self.hub = HubWindow(self.to_battle, self.to_bag, self.logout,
-                             go_quests=self.to_quests, go_shop=self.to_shop)
+                             go_quests=self.to_quests, go_shop=self.to_shop,
+                             go_enhance=self.to_enhance)
         self.battle = gui.BattleWidget()
         self.battle.back_to_hub.connect(self.to_hub)
         self.bag = gui_bag.BagWindow(self.to_hub)
         self.storage = gui_bag.BagWindow(self.to_hub, source="storage")
         self.shop = gui_shop.ShopWindow(self.to_hub, self.to_storage)
         self.questsw = gui_quests.QuestWindow(self.to_hub)
+        self.enhancew = gui_enhance.EnhanceWindow(self.to_hub)
         for w in (self.login, self.server, self.slotsw, self.hub, self.battle,
-                  self.bag, self.storage, self.shop, self.questsw):
+                  self.bag, self.storage, self.shop, self.questsw, self.enhancew):
             self.addWidget(w)
 
         sess = login.get_session()          # 会话恢复：记住上次登录
@@ -90,6 +93,10 @@ class App(QStackedWidget):
     def to_quests(self):
         self.questsw.refresh()
         self.setCurrentWidget(self.questsw)
+
+    def to_enhance(self):
+        self.enhancew.refresh()
+        self.setCurrentWidget(self.enhancew)
 
     def logout(self):
         login.logout()

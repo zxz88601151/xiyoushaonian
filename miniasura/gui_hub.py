@@ -7,7 +7,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 class HubWindow(QWidget):
-    def __init__(self, go_battle, go_bag, go_login, go_quests=None, go_shop=None):
+    def __init__(self, go_battle, go_bag, go_login, go_quests=None, go_shop=None,
+                 go_enhance=None):
         super().__init__()
         news = QTextEdit()
         news.setReadOnly(True)
@@ -21,6 +22,8 @@ class HubWindow(QWidget):
         quest.clicked.connect(go_quests or (lambda: None))
         shop = QPushButton("商店（买药 / 回收 / 仓库）")
         shop.clicked.connect(go_shop or (lambda: None))
+        enhance_btn = QPushButton("铁匠（强化）")
+        enhance_btn.clicked.connect(go_enhance or (lambda: None))
         out = QPushButton("退出登录")
         out.clicked.connect(go_login)
 
@@ -30,6 +33,7 @@ class HubWindow(QWidget):
         lay.addWidget(start)
         lay.addWidget(quest)
         lay.addWidget(shop)
+        lay.addWidget(enhance_btn)
         lay.addWidget(bag)
         lay.addWidget(out)
         self.setLayout(lay)

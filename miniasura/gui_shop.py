@@ -1,5 +1,6 @@
 # V2.2 商店窗 —— 买药 + 白装回收 + 仓库入口。
 # V2.3：货币已切金币（原来是经验点临时货币）；价目/回收参数全在数据层，本窗不做算术外的事。
+# V2.4：保底符是专用按钮（见 DESIGN_V2_4.md §2，不在 shop.txt 里，mpak 重建前不走数据驱动）。
 import configparser
 import os
 import sys
@@ -11,6 +12,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "lesson03"))
 import mypack
 
+import enhance
 import gear
 import save
 
@@ -50,6 +52,9 @@ class ShopWindow(QWidget):
             btn = QPushButton(f"买 {r['name']}（{r['price']} 金币）")
             btn.clicked.connect(lambda _, k=r["key"]: self.buy(k))
             buy_row.addWidget(btn)
+        protect_btn = QPushButton(f"买保底符（{enhance.PROTECT_PRICE} 金币）")
+        protect_btn.clicked.connect(lambda _: self.buy("protect"))
+        buy_row.addWidget(protect_btn)
 
         self.recycle_list = QListWidget()
         btn_recycle = QPushButton("回收选中白装（折金币）")
@@ -81,7 +86,8 @@ class ShopWindow(QWidget):
         gold = self.data.get("gold", 0)
         pot = self.data.get("potions", {})
         self.currency.setText(f"可用金币：{gold}")
-        self.pot_lab.setText(f"持有：血瓶 x{pot.get('hp', 0)}   蓝瓶 x{pot.get('mp', 0)}")
+        self.pot_lab.setText(f"持有：血瓶 x{pot.get('hp', 0)}   蓝瓶 x{pot.get('mp', 0)}"
+                             f"   保底符 x{self.data.get('protect', 0)}")
         self.whites = [it for it in self.data.get("inventory", [])
                        if it.get("quality") == 0]
         self.recycle_list.clear()
@@ -91,6 +97,17 @@ class ShopWindow(QWidget):
 
     def buy(self, key):
         if not self.data:
+            return
+        if key == "protect":
+            if self.data.get("gold", 0) < enhance.PROTECT_PRICE:
+                QMessageBox.warning(self, "金币不足",
+                                    f"买保底符需要 {enhance.PROTECT_PRICE} 金币，"
+                                    f"你只有 {self.data.get('gold', 0)}")
+                return
+            self.data["gold"] = self.data.get("gold", 0) - enhance.PROTECT_PRICE
+            self.data["protect"] = self.data.get("protect", 0) + 1
+            save.write_raw(self.data)
+            self.refresh()
             return
         row = next((r for r in load_shop() if r["key"] == key), None)
         if not row:

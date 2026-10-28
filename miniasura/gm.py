@@ -11,7 +11,7 @@ import slots
 
 USAGE = ("用法: gm.py setlevel <n> | next <k> | give <slot> [lv] [quality=2]"
          " | quest <key> | map <n> | potion <hp|mp> <n> | gold <n>"
-         " | difficulty <0|1|2> | wipe")
+         " | difficulty <0|1|2> | protect <n> | wipe")
 
 
 def current_slot():
@@ -106,6 +106,9 @@ def main():
     elif cmd == "gold" and len(sys.argv) == 3:
         data["gold"] = _int(sys.argv[2])
         print("金币 → %d" % data["gold"])
+    elif cmd == "protect" and len(sys.argv) == 3:
+        data["protect"] = _int(sys.argv[2])
+        print("保底符 → %d" % data["protect"])
     elif cmd == "difficulty" and len(sys.argv) == 3:
         n = _int(sys.argv[2])
         if n not in (0, 1, 2):

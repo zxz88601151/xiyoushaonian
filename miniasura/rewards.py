@@ -5,6 +5,16 @@ import quests
 from combat import grant_exp
 
 
+def apply_death_penalty(player, io):
+    """V2.4 死亡惩罚：扣当前经验 10%（向下取整，不掉级），返回扣掉的经验。
+    经验 <10 时扣 0，不倒扣；调用方负责满血回城与落盘。"""
+    loss = int(player.get("exp", 0) * 0.10)
+    player["exp"] = player.get("exp", 0) - loss
+    if loss:
+        io.say(f"  死亡惩罚：经验 -{loss}（当前经验的 10%，不掉级）")
+    return loss
+
+
 def apply_rewards(cfg, player, io, completed, storage):
     """任务奖励发放（exp/药水/装备）；背包满时装备转仓库；空部位奖励直接穿上。"""
     for q in completed:

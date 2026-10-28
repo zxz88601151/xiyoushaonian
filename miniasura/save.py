@@ -1,4 +1,4 @@
-# MiniAsura 存档外围 —— schema 5（V2.0 §3 + V2.1 §2 + V2.2 §3 + V2.3 金币/难度）。
+# MiniAsura 存档外围 —— schema 6（V2.0 §3 + V2.1 §2 + V2.2 §3 + V2.3 金币/难度 + V2.4 强化/保底符）。
 # 路径由登录链经 set_path() 注入；engine 只调 load/write，不认识账号。
 # CLI dev 模式（python engine.py）不注入 = 用默认路径，v1 行为保持。
 import json
@@ -8,7 +8,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PATH = os.path.join(HERE, "save.json")
 _USER = ""
 
-SCHEMA = 5
+SCHEMA = 6
 SLOT_KEYS = ("weapon", "helm", "armor", "belt", "boots")
 
 
@@ -30,7 +30,7 @@ def load():
 
 
 def _migrate(old):
-    # 迁移链：v1（cleared 布尔）→ v2（week/playtime）→ v3（背包/装备）→ v4（任务/图/药/仓库）→ v5（金币/难度）
+    # 迁移链：v1（cleared 布尔）→ v2（week/playtime）→ v3（背包/装备）→ v4（任务/图/药/仓库）→ v5（金币/难度）→ v6（强化/保底符）
     # 规则只补默认值不改已有数值——升档不许丢东西
     if "cleared" in old:
         old["week"] = 1 if old.pop("cleared") else 0
@@ -46,6 +46,13 @@ def _migrate(old):
     old.setdefault("storage", [])          # V2.2：仓库（背包第二页）
     old.setdefault("gold", 0)              # V2.3：金币
     old.setdefault("difficulty", 0)        # V2.3：难度 0普通/1精英/2噩梦
+    old.setdefault("protect", 0)           # V2.4：保底符张数
+    for it in list(old.get("inventory", [])) + list(old.get("storage", [])):
+        if isinstance(it, dict):
+            it.setdefault("enh", 0)        # V2.4：旧装备补强化等级
+    for it in (old.get("equipment") or {}).values():
+        if isinstance(it, dict):
+            it.setdefault("enh", 0)
     old["schema"] = SCHEMA
     return old
 
@@ -57,6 +64,7 @@ def write(player, next_index, week, playtime, maps_cleared=0,
         "level": player["level"], "exp": player["exp"],
         "hp": player["hp"], "mp": player["mp"], "attack": player["attack"],
         "gold": player.get("gold", 0), "difficulty": difficulty,
+        "protect": player.get("protect", 0),
         "next": next_index, "week": week, "playtime": playtime,
         "inventory": player.get("inventory", []),
         "equipment": player.get("equipment", {k: None for k in SLOT_KEYS}),
