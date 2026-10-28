@@ -1,0 +1,114 @@
+[
+   {
+      "data_name" : "chat",
+      "enable_update" : "0",
+      "id" : "10002",
+      "item_id" : "1",
+      "item_update_time" : "2017-06-19 19:16:01",
+      "name" : "chat"
+   },
+   {
+      "data_name" : "game_wiki",
+      "enable_update" : "1",
+      "id" : "10003",
+      "item_id" : "2",
+      "item_update_time" : "2017-06-19 17:07:34",
+      "name" : "game_wiki"
+   },
+   {
+      "data_name" : "debug_app",
+      "enable_update" : "0",
+      "id" : "1",
+      "item_id" : "3",
+      "item_update_time" : "2017-06-20 17:02:32",
+      "name" : "debug_app"
+   },
+   {
+      "data_name" : "TipsDemo",
+      "enable_update" : "0",
+      "id" : "100",
+      "item_id" : "4",
+      "item_update_time" : "2017-06-20 17:02:33",
+      "name" : "TipsDemo"
+   },
+   {
+      "data_name" : "rail_tips",
+      "enable_update" : "0",
+      "id" : "10004",
+      "item_id" : "5",
+      "item_update_time" : "2017-06-20 17:02:33",
+      "name" : "rail_tips"
+   },
+   {
+      "data_name" : "screenshot",
+      "enable_update" : "0",
+      "id" : "10006",
+      "item_id" : "6",
+      "item_update_time" : "2017-06-20 17:02:33",
+      "name" : "screenshot"
+   },
+   {
+      "data_name" : "sys_performance",
+      "enable_update" : "0",
+      "id" : "10009",
+      "item_id" : "7",
+      "item_update_time" : "2017-06-20 17:02:34",
+      "name" : "sys_performance"
+   },
+   {
+      "data_name" : "TQT",
+      "enable_update" : "0",
+      "id" : "104010",
+      "item_id" : "8",
+      "item_update_time" : "2017-06-20 17:02:34",
+      "name" : "TQT"
+   },
+   {
+      "data_name" : "冒险岛2助手",
+      "enable_update" : "0",
+      "id" : "10033",
+      "item_id" : "9",
+      "item_update_time" : "2017-08-21 19:30:55",
+      "name" : "..\\..\\mxd2\\mxd2_helper"
+   },
+   {
+      "data_name" : "GameRecorder",
+      "enable_update" : "0",
+      "id" : "104009",
+      "item_id" : "10",
+      "item_update_time" : "2017-06-20 17:02:34",
+      "name" : "GameRecorder"
+   },
+   {
+      "data_name" : "AssistInGame",
+      "enable_update" : "0",
+      "id" : "104011",
+      "item_id" : "11",
+      "item_update_time" : "2017-06-20 17:02:34",
+      "name" : "AssistInGame"
+   },
+   {
+      "data_name" : "VESDK",
+      "enable_update" : "0",
+      "id" : "104000",
+      "item_id" : "12",
+      "item_update_time" : "2017-06-20 17:02:34",
+      "name" : "VESDK"
+   },
+   {
+      "data_name" : "弹幕",
+      "enable_update" : "0",
+      "id" : "10010",
+      "item_id" : "22",
+      "item_update_time" : "2018-04-20 16:52:25",
+      "name" : "barrage"
+   },
+   {
+      "data_name" : "WGVoice",
+      "enable_update" : "0",
+      "id" : "104013",
+      "item_id" : "24",
+      "item_update_time" : "2018-07-04 15:14:17",
+      "name" : "WGVoice"
+   }
+]

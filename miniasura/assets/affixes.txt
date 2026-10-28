@@ -1,0 +1,8 @@
+atkflat|攻击|flat|1.2|1.8|any|0
+atkp|攻击%|pct|3|8|weapon,belt|0
+hpp|HP%|pct|4|10|helm,armor,belt|0
+defflat|防御|flat|0.4|0.8|armor,belt,boots|0
+crit|暴击率%|pct|2|5|weapon,helm,belt|0
+critdmg|暴伤%|pct|10|25|weapon,boots|0
+leech|吸血%|pct|2|5|weapon|1
+exp|经验加成%|pct|5|10|helm,belt|0

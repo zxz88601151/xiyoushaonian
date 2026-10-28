@@ -1,0 +1,35 @@
+# V2.0 大厅窗 → V2.2 主城 —— 公告 + 战斗 + 任务/商店/背包 + 退出登录。
+import os
+
+from PySide6.QtWidgets import QLabel, QPushButton, QTextEdit, QVBoxLayout, QWidget
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+class HubWindow(QWidget):
+    def __init__(self, go_battle, go_bag, go_login, go_quests=None, go_shop=None):
+        super().__init__()
+        news = QTextEdit()
+        news.setReadOnly(True)
+        with open(os.path.join(HERE, "news.txt"), encoding="utf-8") as f:
+            news.setPlainText(f.read())
+        start = QPushButton("进入游戏（继续 / 开新周目）")
+        start.clicked.connect(go_battle)
+        bag = QPushButton("背包 / 装备")
+        bag.clicked.connect(go_bag)
+        quest = QPushButton("任务（看进度 / 重看对话）")
+        quest.clicked.connect(go_quests or (lambda: None))
+        shop = QPushButton("商店（买药 / 回收 / 仓库）")
+        shop.clicked.connect(go_shop or (lambda: None))
+        out = QPushButton("退出登录")
+        out.clicked.connect(go_login)
+
+        lay = QVBoxLayout()
+        lay.addWidget(QLabel("主城"))
+        lay.addWidget(news)
+        lay.addWidget(start)
+        lay.addWidget(quest)
+        lay.addWidget(shop)
+        lay.addWidget(bag)
+        lay.addWidget(out)
+        self.setLayout(lay)

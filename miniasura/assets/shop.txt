@@ -1,0 +1,4 @@
+# MiniAsura V2.2 商店价目 —— 物品key|名称|价格
+# 货币临时用经验点（金币经济 V2.3 上线后切换），回收规则在 game.ini [shop]
+hp_potion|血瓶|30
+mp_potion|蓝瓶|20

@@ -1,0 +1,1 @@
+map data: forest, 100x100

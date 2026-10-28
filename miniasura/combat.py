@@ -1,0 +1,129 @@
+# V2.2 战斗流程模块 —— 自 engine.py 拆出（V2.1 入档的 221 行偏差，本期销账）。
+# 流程在这里，数值公式仍在 scripts/battle.lua：引擎只掷骰（暴击/浮动/概率）。
+import json
+import os
+import random
+import subprocess
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+LUA = os.path.join(HERE, "..", "tools", "lua-5.1.5", "lua.exe")
+BATTLE_LUA = os.path.join(HERE, "scripts", "battle.lua")
+
+
+def lua(*args):
+    # 引擎与脚本只传一行 JSON；argv 全数字（编码铁律），stdout 里只取含 { 的那行
+    out = subprocess.run([LUA, BATTLE_LUA] + [str(a) for a in args],
+                         capture_output=True, text=True, encoding="utf-8").stdout
+    line = next(l for l in out.splitlines() if "{" in l).strip()
+    return json.loads(line)
+
+
+def roll_damage(player, power):
+    # 两颗骰都归引擎（暴击率/浮动来自概率），倍率/暴伤/公式归 Lua
+    crit = random.randint(1, 100) <= player["crit_rate"]
+    rand = random.randint(95, 105)
+    res = lua("damage", player["attack"], power, 1 if crit else 0,
+              f"{player['critdmg']:.4f}", rand)
+    return res["dmg"], res["crit"]
+
+
+def grant_exp(cfg, player, io, amount):
+    amount = int(amount * (1 + player.get("exp_bonus", 0)))   # 经验加成词条（V2.1）
+    res = lua("levelup", player["exp"], amount,
+              cfg.getint("growth", "exp_needed"), player["level"])
+    old = player["level"]
+    player["level"], player["exp"] = res["level"], res["exp"]
+    if player["level"] > old:
+        from engine import apply_gear   # 升级重算全属性（终审 F1 回归）
+        apply_gear(cfg, player)
+        io.say(f"  ★ 升级！现在 Lv.{player['level']}，攻击力 {player['attack']}")
+
+
+def use_potion(cfg, player, io):
+    """战斗内用药（V2.2 商店闭环的验证端）。用了=True → 怪物照样反击（回合照过）。"""
+    pot = player.get("potions") or {}
+    io.say(f"  1 血瓶 x{pot.get('hp', 0)}（回{cfg.getint('potion', 'hp_pct')}%上限）"
+           f"   2 蓝瓶 x{pot.get('mp', 0)}（回{cfg.getint('potion', 'mp_flat')}蓝）")
+    pick = io.ask("用什么 > ").strip()
+    if pick == "1" and pot.get("hp", 0) > 0:
+        pot["hp"] -= 1
+        heal = round(player["max_hp"] * cfg.getint("potion", "hp_pct") / 100)
+        player["hp"] = min(player["max_hp"], player["hp"] + heal)
+        io.say(f"  咬下一口仙桃，回血 {heal}！")
+        return True
+    if pick == "2" and pot.get("mp", 0) > 0:
+        pot["mp"] -= 1
+        mana = cfg.getint("potion", "mp_flat")
+        player["mp"] = min(cfg.getint("player", "mp"), player["mp"] + mana)
+        io.say(f"  抿一口玉液，回蓝 {mana}！")
+        return True
+    io.say("  （没有可用的药——回合照过）")
+    return False
+
+
+def battle(cfg, skills, mon, player, io):
+    """mon = {"name","intro","hp","atk","exp"}（引擎按地图难度倍率算好传入）。"""
+    name = mon["name"]
+    m_hp, m_atk, m_exp = mon["hp"], mon["atk"], mon["exp"]
+    io.say(f"\n═══ {name} 出现！「{mon['intro']}」")
+
+    while m_hp > 0:
+        io.say(f"\n[{name} HP {m_hp}]  你 HP {player['hp']}/{player['max_hp']}  "
+               f"MP {player['mp']}  攻击力 {player['attack']}  防御 {player['def']:.1f}")
+        act = io.ask("1 普攻 / 2 技能 / 3 逃跑 / 4 物品 > ").strip()
+        power = None
+        if act == "3":
+            if mon.get("key") == "boss":
+                io.say("夫人的骨刺封死了场地——逃跑失败！")
+                continue
+            io.say("你脚底抹油，溜了（无经验）。")
+            return "escaped"
+        elif act == "4":
+            if use_potion(cfg, player, io):
+                pass                      # 用药花回合：怪物照样出手
+            else:
+                continue
+        elif act == "1":
+            power = cfg.getfloat("fight", "normal_power")
+        elif act == "2":
+            keys = list(skills)
+            for i, sk in enumerate(keys, 1):
+                sname, sdesc = skills[sk]
+                io.say(f"  {i} {sname}（威力 x{cfg.getfloat('skill.' + sk, 'power')}，"
+                       f"耗蓝 {cfg.getint('skill.' + sk, 'mp_cost')}）{sdesc}")
+            pick = io.ask("选技能 > ").strip()
+            if not pick.isdigit() or not 1 <= int(pick) <= len(keys):
+                io.say("没有这个技能。")
+                continue
+            sk = keys[int(pick) - 1]
+            cost = cfg.getint("skill." + sk, "mp_cost")
+            if player["mp"] < cost:
+                io.say("蓝不够了！")
+                continue
+            player["mp"] -= cost
+            power = cfg.getfloat("skill." + sk, "power")
+        else:
+            io.say("看不懂的指令。")
+            continue
+        if power is not None:
+            dmg, crit = roll_damage(player, power)
+            m_hp -= dmg
+            crit_mark = "，暴击！" if crit else ""
+            io.say(f"你打出 {dmg} 点伤害{crit_mark}")
+            heal = int(dmg * player["leech"])        # 吸血词条：不溢上限
+            if heal > 0 and player["hp"] < player["max_hp"]:
+                player["hp"] = min(player["max_hp"], player["hp"] + heal)
+                io.say(f"  血脉倒卷，吸血回复 {heal} 点血")
+        if m_hp <= 0:
+            break
+        taken = lua("incoming", m_atk, f"{player['def']:.2f}")["dmg"]
+        player["hp"] -= taken
+        if taken < m_atk:
+            io.say(f"{name} 反击，你损失 {taken} 点血（防御格挡 {m_atk - taken}）")
+        else:
+            io.say(f"{name} 反击，你损失 {taken} 点血")
+        if player["hp"] <= 0:
+            return "dead"
+    io.say(f"{name} 倒下了！获得 {m_exp} 点经验。")
+    grant_exp(cfg, player, io, m_exp)
+    return "win"

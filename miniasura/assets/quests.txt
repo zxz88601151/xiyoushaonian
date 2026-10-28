@@ -1,0 +1,13 @@
+# MiniAsura V2.2 十任务表 —— key|名称|类型|目标|奖励|前置任务(-=无)|对话id(-=无)
+# 类型: clear(通关第N图) / talk(看完对话id) / kill(击杀怪物:N) / hidden(lose:怪物:N)
+# 奖励: exp:n / potion_hp:n / potion_mp:n / gear:部位:等级:品质
+m1|仙石出世|clear|2|exp:30,gear:weapon:15:0|-|q_m1
+m2|学艺借宝|clear|4|exp:50,gear:weapon:16:1|m1|q_m2
+m3|大闹天宫|clear|5|exp:60,gear:armor:17:1|m2|q_m3
+m4|火里逃生|clear|7|exp:80,potion_hp:2|m3|q_m4
+m5|西行取经|clear|9|exp:100,gear:weapon:18:1|m4|q_m5
+m6|决战白骨|clear|10|exp:200|m5|q_m6
+s1|除妖积德|kill|xiaoyao2:2|exp:40,potion_mp:2|m1|-
+s2|龙宫借宝|talk|d_map4|exp:40|m1|-
+s3|偷桃充饥|talk|d_map6|exp:40|m1|-
+h1|败者之泪|hidden|lose:boss:1|exp:100|-|q_h1
