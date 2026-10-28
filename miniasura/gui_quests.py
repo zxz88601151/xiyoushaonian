@@ -21,6 +21,7 @@ class QuestWindow(QWidget):
         super().__init__()
         self.back = back
         self.rows = []                       # 与列表行号平行的任务引用
+        self.states = {}                     # key → locked/active/done（refresh 时刷新）
         pack = os.path.join(HERE, "assets.mpak")
         self.blocks = dialogue.load(
             mypack.read(pack, "dialogue.txt").decode("utf-8"))
@@ -47,8 +48,10 @@ class QuestWindow(QWidget):
         kills = (data or {}).get("kills", {})
         tracker = quests.Tracker(self.rows, flags, kills)
         self.listw.clear()
+        self.states = {}
         for q in self.rows:
             st = tracker.state(q["key"])
+            self.states[q["key"]] = st
             if q["type"] == "hidden" and st != "done":
                 # 隐藏任务防剧透：未完成前不露名称与触发条件
                 self.listw.addItem("🔒 ???  [隐藏任务]")
@@ -62,6 +65,9 @@ class QuestWindow(QWidget):
         if not (0 <= row < len(self.rows)):
             return
         q = self.rows[row]
+        if q["type"] == "hidden" and self.states.get(q["key"]) != "done":
+            QMessageBox.information(self, "隐藏任务", "（完成后才能重看这段对话）")
+            return
         if q["dialogue"] == "-":
             QMessageBox.information(self, q["name"], "（这个任务没有专属对话）")
             return

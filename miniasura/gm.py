@@ -21,6 +21,18 @@ def current_slot():
     return sess
 
 
+def _int(s):
+    try:
+        v = int(s)
+    except ValueError:
+        print("数字参数不合法:", s)
+        sys.exit(1)
+    if v < 0:
+        print("数字参数不能为负:", s)
+        sys.exit(1)
+    return v
+
+
 def main():
     if len(sys.argv) < 2:
         print(USAGE)
@@ -68,10 +80,10 @@ def main():
         print("已发放:", gear.item_line(item))
         print("词条:", "、".join(f"{a['name']}+{a['val']:.1f}" for a in item["affixes"]) or "无")
     elif cmd == "setlevel" and len(sys.argv) == 3:
-        data["level"] = int(sys.argv[2])
+        data["level"] = _int(sys.argv[2])
         print("等级 → %d（攻击力由引擎按等级重算，存档不存派生值）" % data["level"])
     elif cmd == "next" and len(sys.argv) == 3:
-        data["next"] = int(sys.argv[2])
+        data["next"] = _int(sys.argv[2])
         print("进度 → 第 %d 战" % (data["next"] + 1))
     elif cmd == "quest" and len(sys.argv) == 3:
         valid = {q["key"] for q in quests.load(quests.load_pack_text())}
@@ -81,14 +93,14 @@ def main():
         data.setdefault("quest_flags", {})[sys.argv[2]] = "done"
         print("任务 %s → done" % sys.argv[2])
     elif cmd == "map" and len(sys.argv) == 3:
-        n = int(sys.argv[2])
+        n = _int(sys.argv[2])
         if not 1 <= n <= 10:
             print("图号必须是 1-10")
             sys.exit(1)
         data["maps_cleared"] = n
         print("已通图数 → %d" % n)
     elif cmd == "potion" and len(sys.argv) == 4 and sys.argv[2] in ("hp", "mp"):
-        data.setdefault("potions", {"hp": 0, "mp": 0})[sys.argv[2]] = int(sys.argv[3])
+        data.setdefault("potions", {"hp": 0, "mp": 0})[sys.argv[2]] = _int(sys.argv[3])
         print("药水 %s → %d" % (sys.argv[2], int(sys.argv[3])))
     else:
         print(USAGE)

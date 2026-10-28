@@ -30,6 +30,8 @@ def register(user, password):
     """成功返回 None，失败返回原因字符串（fail-closed：不抛异常静默通过）。"""
     if not user.strip() or not password:
         return "用户名和密码不能为空"
+    if set(user) & set('\\/:*?"<>|') or user.strip(".") == "":
+        return "用户名含非法字符（\\ / : * ? \" < > | 或纯点）"
     accounts = _read(ACCOUNTS, [])
     if any(a["user"] == user for a in accounts):
         return "用户名已存在"

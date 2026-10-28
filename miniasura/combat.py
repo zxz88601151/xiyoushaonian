@@ -57,7 +57,7 @@ def use_potion(cfg, player, io):
         player["mp"] = min(cfg.getint("player", "mp"), player["mp"] + mana)
         io.say(f"  抿一口玉液，回蓝 {mana}！")
         return True
-    io.say("  （没有可用的药——回合照过）")
+    io.say("  （没有可用的药——重新选择行动）")
     return False
 
 
