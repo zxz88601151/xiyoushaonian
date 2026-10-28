@@ -68,6 +68,9 @@ class BattleWidget(QWidget):
             (("继续", ""), ("略过(s)", "s")))
         self.pot_row, self.pot_btns = self.make_row(
             (("血瓶(1)", "1"), ("蓝瓶(2)", "2"), ("取消", "x")))
+        # V2.3 难度：新档/新周目开局问一次，专排按钮与对话/药水同机制。
+        self.diff_row, self.diff_btns = self.make_row(
+            (("普通(1)", "1"), ("精英(2)", "2"), ("噩梦(3)", "3")))
 
         self.entry = QLineEdit()
         self.entry.setPlaceholderText("输入数字后回车也可以")
@@ -85,6 +88,7 @@ class BattleWidget(QWidget):
         side.addLayout(self.sk_row)
         side.addLayout(self.dia_row)
         side.addLayout(self.pot_row)
+        side.addLayout(self.diff_row)
         side.addWidget(self.entry)
         side.addStretch()
 
@@ -113,7 +117,8 @@ class BattleWidget(QWidget):
 
     def _set_mode(self, on, mode):
         rows = {"act": self.act_btns, "skill": self.sk_btns,
-                "dialogue": self.dia_btns, "potion": self.pot_btns}
+                "dialogue": self.dia_btns, "potion": self.pot_btns,
+                "difficulty": self.diff_btns}
         for name, btns in rows.items():
             for b in btns:
                 b.setEnabled(bool(on) and name == mode)
@@ -148,6 +153,8 @@ class BattleWidget(QWidget):
             mode = "dialogue"
         elif "用什么" in prompt:
             mode = "potion"
+        elif "选择难度" in prompt:
+            mode = "difficulty"
         else:
             mode = "act"
         self.prompt.setText(prompt)

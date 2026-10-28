@@ -11,6 +11,7 @@ import mypack
 import save
 import gear
 import combat
+import loot
 import rewards
 from combat import battle, grant_exp, roll_damage, lua   # 再导出：外部依赖 engine.grant_exp
 import dialogue as dlg
@@ -62,8 +63,10 @@ def apply_gear(cfg, player):
     player["exp_bonus"] = tot["exp"] / 100
 
 
-def build_maps(text, cfg, monsters):
-    """maps.txt: 序号|地图名|怪物key(逗号分隔,-=无)|对话id|难度倍率 → 战斗按倍率缩放。"""
+def build_maps(text, cfg, monsters, difficulty=0):
+    """maps.txt: 序号|地图名|怪物key(逗号分隔,-=无)|对话id|难度倍率 → 战斗按倍率缩放。
+    V2.3：再乘难度倍率（loot.DIFF_MULT），金币与经验同乘奖励倍率。"""
+    stat_mult, reward_mult = loot.DIFF_MULT[difficulty]
     maps = []
     for line in text.splitlines():
         if not line.strip() or line.startswith("#"):
@@ -77,9 +80,10 @@ def build_maps(text, cfg, monsters):
                 # key 必须同时放进 mon：combat.battle 靠 mon["key"]=="boss"
                 # 判定 boss 战逃跑必失败，之前缺这一项导致 boss 也能逃跑。
                 "key": key, "name": monsters[key][0], "intro": monsters[key][1],
-                "hp": round(int(base["hp"]) * scale),
-                "atk": round(int(base["attack"]) * scale),
-                "exp": round(int(base["exp"]) * scale)}})
+                "hp": round(int(base["hp"]) * scale * stat_mult),
+                "atk": round(int(base["attack"]) * scale * stat_mult),
+                "exp": round(int(base["exp"]) * scale * reward_mult),
+                "gold": round(int(base.get("gold", 0)) * scale * reward_mult)}})
         maps.append({"no": int(no), "name": name, "fights": fights, "did": did})
     return maps
 
@@ -104,6 +108,8 @@ def run_game(io):
 
     state = save.load()
     week = base_playtime = maps_cleared = start = 0
+    difficulty = None
+    gold_carry = 0
     storage = []
     tracker = None
     if state and state.get("next", 0) >= total_fights():
@@ -114,18 +120,21 @@ def run_game(io):
         tracker = qsys.Tracker(qsys.load(texts["quests.txt"]),
                                state.get("quest_flags"), state.get("kills"))
         storage = state.get("storage", [])
-        state = None        # 周目重开：等级回起点；任务/仓库继承
+        difficulty = loot.ask_difficulty(io)   # 新周目重问难度
+        gold_carry = state.get("gold", 0)      # 金币跨周目继承（与仓库同理）
+        state = None        # 周目重开：等级回起点；任务/仓库/金币继承
     elif state:
         io.say(f"\n（读取存档：Lv.{state['level']}，已推进至第 {state.get('maps_cleared', 0) + 1} 图）")
         week = state.get("week", 0)
         base_playtime = state.get("playtime", 0)
         maps_cleared = state.get("maps_cleared", 0)
         start = state["next"]
+        difficulty = state.get("difficulty", 0)   # 续档不重问难度
         storage = state.get("storage", [])
         tracker = qsys.Tracker(qsys.load(texts["quests.txt"]),
                                state.get("quest_flags"), state.get("kills"))
         player = {"level": state["level"], "exp": state["exp"],
-                  "hp": state["hp"], "mp": state["mp"],
+                  "hp": state["hp"], "mp": state["mp"], "gold": state.get("gold", 0),
                   "inventory": state.get("inventory", []),
                   "equipment": state.get("equipment") or gear.empty_equipment(),
                   "potions": state.get("potions") or {"hp": 0, "mp": 0}}
@@ -133,17 +142,20 @@ def run_game(io):
         player["hp"] = min(player["hp"], player["max_hp"])
     if not state:
         player = {"level": cfg.getint("player", "level"), "exp": 0,
-                  "mp": cfg.getint("player", "mp"),
+                  "mp": cfg.getint("player", "mp"), "gold": gold_carry,
                   "inventory": [], "equipment": gear.empty_equipment(),
                   "potions": {"hp": 0, "mp": 0}}
         if tracker is None:
             tracker = qsys.Tracker(qsys.load(texts["quests.txt"]))
         apply_gear(cfg, player)
         player["hp"] = player["max_hp"]          # 新档满血进本
+    difficulty = loot.ask_difficulty(io) if difficulty is None else difficulty
+    maps = build_maps(texts["maps.txt"], cfg, monsters, difficulty)
 
     def persist(next_index, cleared):
         save.write(player, next_index, week, base_playtime + int(time.time() - t0),
-                   maps_cleared=cleared, tracker=tracker, storage=storage)
+                   maps_cleared=cleared, tracker=tracker, storage=storage,
+                   difficulty=difficulty)
 
     t0 = time.time()
     fi = 0
@@ -177,6 +189,7 @@ def run_game(io):
             if result == "win":
                 for q in tracker.on_event("win", f["key"]):
                     rewards.apply_rewards(cfg, player, io, [q], storage)
+                loot.grant_win(cfg, f, player, storage, io, difficulty)
             fi += 1
             persist(fi, maps_cleared)
         for q in tracker.on_event("map", m["no"]):
@@ -194,6 +207,9 @@ def run_game(io):
                               for q in tracker.qs.values()))
     io.say(f"地图推进 {maps_cleared}/{len(maps)}   第 {week} 周目   "
            f"击杀合计 {sum(v for k, v in tracker.kills.items() if not k.startswith('lose:'))}")
+    io.say(f"金币 {player.get('gold', 0)}   难度 {loot.DIFF_NAMES[difficulty]}")
+    io.say("击杀：" + " ".join(f"{monsters[k][0]}x{v}" for k, v in tracker.kills.items()
+                              if not k.startswith("lose:")) or "击杀：无")
 
 
 def main():

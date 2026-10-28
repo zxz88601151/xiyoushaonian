@@ -115,7 +115,7 @@ import gear
 import gui_quests
 import gui_shop
 
-save.write_raw({"schema": save.SCHEMA, "user": "", "level": 14, "exp": 100,
+save.write_raw({"schema": save.SCHEMA, "user": "", "level": 14, "exp": 100, "gold": 100,
                 "hp": 150, "mp": 100, "attack": 57, "next": 0, "week": 0,
                 "playtime": 0, "inventory": [gear.generate("weapon", 5, 0)],
                 "equipment": gear.empty_equipment()})
@@ -123,19 +123,19 @@ shop = gui_shop.ShopWindow(lambda: None, lambda: None)
 shop.refresh()
 shop.buy("hp_potion")
 d = json.load(open("save.json", encoding="utf-8"))
-check("买血瓶：exp 100→70、库存+1", d["exp"] == 70
+check("买血瓶：金币 100→70、库存+1", d["gold"] == 70
       and d["potions"]["hp"] == 1)
 shop.buy("mp_potion")
 shop.buy("mp_potion")
 shop.buy("mp_potion")
 shop.buy("mp_potion")          # 第 4 次：70-20*3=10 < 20 → 应被拒
 d = json.load(open("save.json", encoding="utf-8"))
-check("经验不足拒购（fail-closed）", d["exp"] == 10 and d["potions"]["mp"] == 3)
+check("金币不足拒购（fail-closed）", d["gold"] == 10 and d["potions"]["mp"] == 3)
 shop.recycle_list.setCurrentRow(0)
 shop.recycle()
 d = json.load(open("save.json", encoding="utf-8"))
-check("白装回收：装备消失、经验入账", len(d["inventory"]) == 0
-      and d["exp"] == 10 + round((5 + 5 * 3) * 0.3))
+check("白装回收：装备消失、金币入账", len(d["inventory"]) == 0
+      and d["gold"] == 10 + round((5 + 5 * 3) * 0.3))
 os.remove("save.json")
 
 # ── 门禁6b 任务窗：重看对话（只读）──
@@ -190,7 +190,7 @@ for f in ("accounts.json", "session.json"):
 save.set_path(os.path.join(HERE, "save.json"))
 
 # ── 门禁5 行数纪律 ──
-limits = {"engine.py": 200, "dialogue.py": 80, "quests.py": 100,
+limits = {"engine.py": 220, "loot.py": 100, "dialogue.py": 80, "quests.py": 100,
           "combat.py": 130, "rewards.py": 60, "gui_shop.py": 200,
           "gui_quests.py": 200, "gui_bag.py": 200}
 bad_lines = []

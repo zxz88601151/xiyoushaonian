@@ -10,7 +10,8 @@ import save
 import slots
 
 USAGE = ("用法: gm.py setlevel <n> | next <k> | give <slot> [lv] [quality=2]"
-         " | quest <key> | map <n> | potion <hp|mp> <n> | wipe")
+         " | quest <key> | map <n> | potion <hp|mp> <n> | gold <n>"
+         " | difficulty <0|1|2> | wipe")
 
 
 def current_slot():
@@ -102,6 +103,16 @@ def main():
     elif cmd == "potion" and len(sys.argv) == 4 and sys.argv[2] in ("hp", "mp"):
         data.setdefault("potions", {"hp": 0, "mp": 0})[sys.argv[2]] = _int(sys.argv[3])
         print("药水 %s → %d" % (sys.argv[2], int(sys.argv[3])))
+    elif cmd == "gold" and len(sys.argv) == 3:
+        data["gold"] = _int(sys.argv[2])
+        print("金币 → %d" % data["gold"])
+    elif cmd == "difficulty" and len(sys.argv) == 3:
+        n = _int(sys.argv[2])
+        if n not in (0, 1, 2):
+            print("难度必须是 0普通/1精英/2噩梦")
+            sys.exit(1)
+        data["difficulty"] = n
+        print("难度 → %d" % n)
     else:
         print(USAGE)
         sys.exit(1)
