@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit,
                                QPushButton, QVBoxLayout, QWidget)
 
 import engine
+import gui_report
 import save
 import skills
 import tower
@@ -16,6 +17,7 @@ import tower
 class Bridge(QObject):
     said = Signal(str)
     asked = Signal(str)
+    reported = Signal(dict, str)   # V2.9-C：战报富通道（与战斗窗同构）
     finished = Signal()
 
 
@@ -27,6 +29,10 @@ class GuiIo:
 
     def say(self, msg=""):
         self.bridge.said.emit(msg)
+
+    def report(self, rep, line):
+        self.bridge.reported.emit(rep, line)   # V2.9-C：爬塔战报也进卡片（B1 已打战报）
+        self.say(line)
 
     def ask(self, prompt):
         self.bridge.asked.emit(prompt)
@@ -43,6 +49,7 @@ class TowerWindow(QWidget):
         self.cfg = tower.load_cfg()
 
         self.info = QLabel()
+        self.card = gui_report.ReportCard()   # V2.9-C：塔内战报卡（跨层累计，不清零）
         self.log = QPlainTextEdit()
         self.log.setReadOnly(True)
         self.prompt = QLabel("……")
@@ -73,6 +80,7 @@ class TowerWindow(QWidget):
         lay = QVBoxLayout()
         lay.addWidget(QLabel("无底洞（层数即怪物等级）"))
         lay.addWidget(self.info)
+        lay.addWidget(self.card)
         lay.addWidget(self.log)
         lay.addWidget(self.prompt)
         lay.addLayout(self.act_row)
@@ -121,6 +129,7 @@ class TowerWindow(QWidget):
         self.answers = queue.Queue()
         bridge = Bridge()
         bridge.said.connect(self.log.appendPlainText)
+        bridge.reported.connect(self.card.show_report)
         bridge.asked.connect(self.on_ask)
         bridge.finished.connect(self.on_done)
         threading.Thread(target=self.work, args=(bridge, self.answers), daemon=True).start()

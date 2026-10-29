@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit,
                                QPushButton, QVBoxLayout, QWidget)
 
 import engine
+import gui_report
 import skills
 
 AUTO = [x for x in os.environ.get("MINIASURA_AUTO", "").split(",") if x]
@@ -20,6 +21,7 @@ SHOT = os.environ.get("MINIASURA_SHOT", "")
 class Bridge(QObject):
     said = Signal(str)
     asked = Signal(str)
+    reported = Signal(dict, str)   # V2.9-C：战报富通道（结构化 rep + 日志原文）
     finished = Signal()
 
 
@@ -31,6 +33,10 @@ class GuiIo:
 
     def say(self, msg=""):
         self.bridge.said.emit(msg)
+
+    def report(self, rep, line):
+        self.bridge.reported.emit(rep, line)   # V2.9-C：显眼通道（战报卡）
+        self.say(line)                          # D3：日志仍保留完整原文，不丢记录
 
     def ask(self, prompt):
         self.bridge.asked.emit(prompt)
@@ -47,6 +53,7 @@ class BattleWidget(QWidget):
 
         self.log = QPlainTextEdit()
         self.log.setReadOnly(True)
+        self.card = gui_report.ReportCard()   # V2.9-C：常驻战报卡（放日志上方，滚动不带走）
         self.prompt = QLabel("……")
 
         # 2026-10-28 逃跑补丁：战斗按钮补“物品(4)”（之前 CLI 有、GUI 没有，
@@ -94,6 +101,7 @@ class BattleWidget(QWidget):
         side.addStretch()
 
         layout = QVBoxLayout()
+        layout.addWidget(self.card)
         layout.addWidget(self.log)
         layout.addWidget(self.prompt)
         top = QWidget()
@@ -128,10 +136,12 @@ class BattleWidget(QWidget):
         if wipe and os.path.exists(engine.save.PATH):
             os.remove(engine.save.PATH)
         self.log.clear()
+        self.card.reset()
         self.running = True
         self.answers = queue.Queue()
         bridge = Bridge()
         bridge.said.connect(self.log.appendPlainText)
+        bridge.reported.connect(self.card.show_report)
         bridge.asked.connect(self.on_ask)
         bridge.finished.connect(self.on_done)
         threading.Thread(target=self.work, args=(bridge, self.answers),

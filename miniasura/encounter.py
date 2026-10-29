@@ -106,11 +106,11 @@ def apply_encounter(fight, week, map_no, fi, cfg):
 
 
 def print_report(io, rep):
-    """战报一行（DESIGN_V2_9_A §1.1）：只打印，不改任何数值。"""
-    if not rep:
-        return
-    io.say(f"战报：{rep.get('rounds', 0)}回合 / 造成{rep.get('dealt', 0)}伤害 / "
-           f"承受{rep.get('taken', 0)}伤害 / 暴击{rep.get('crits', 0)}次 / MISS {rep.get('misses', 0)}次")
+    """战报（DESIGN_V2_9_A §1.1）：只打印，不改数值；V2.9-C 起优先走 io.report 富通道。"""
+    if not rep: return
+    line = (f"战报：{rep.get('rounds', 0)}回合 / 造成{rep.get('dealt', 0)}伤害 / "
+            f"承受{rep.get('taken', 0)}伤害 / 暴击{rep.get('crits', 0)}次 / MISS {rep.get('misses', 0)}次")
+    io.report(rep, line) if hasattr(io, "report") else io.say(line)
 
 
 def check_v29(cfg):
