@@ -2,7 +2,7 @@
 # 只做调度与结算：CLI 与 GUI 共用 run_one；解锁=通关一次，死亡/撤离→本次清零、最高层保留。
 import configparser, os, random, sys
 
-import combat, engine, gear, loot, progress, save, skills as sk   # engine 只用于 apply_gear/读资源，不反向依赖
+import combat, encounter, engine, gear, loot, progress, save, skills as sk   # engine 只用于 apply_gear/读资源，不反向依赖
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -50,9 +50,9 @@ def run_one(cfg, skills, player, storage, io, rng=random):
     n = player.get("tower_layer", 0) + 1
     mon = layer_mon(cfg, n)
     io.say("\n═══ 无底洞 第 %d 层（怪物等级 %d）═══" % (n, n))
-    result = combat.battle(cfg, skills, mon, player, io)
+    rep = {}; result = combat.battle(cfg, skills, mon, player, io, rep)   # V2.9-B：爬塔战报接入（与主线一致，win/dead 打印，escaped 不打印）
     if result != "win":
-        player["tower_layer"] = 0
+        player["tower_layer"] = 0; encounter.print_report(io, rep) if result == "dead" else None   # V2.9-B：dead 打印战报，escaped/fled 不打印（与主线一致）
         io.say("  本次止于第 %d 层（历史最高 %d 层）。" % (n - 1, player.get("tower_best", 0)))
         return result
     player["gold"] = player.get("gold", 0) + mon["gold"]
@@ -61,7 +61,7 @@ def run_one(cfg, skills, player, storage, io, rng=random):
     player["tower_layer"], player["tower_best"] = n, max(player.get("tower_best", 0), n)
     if n % cfg["tower"].getint("drop_every", 5) == 0:
         loot.roll(cfg, "tower", player, storage, io, rng=rng)
-    io.say("  ▸ 已到第 %d 层（历史最高 %d 层）" % (n, player["tower_best"]))
+    encounter.print_report(io, rep); io.say("  ▸ 已到第 %d 层（历史最高 %d 层）" % (n, player["tower_best"]))
     return "win"
 
 
