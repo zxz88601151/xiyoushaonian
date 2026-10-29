@@ -137,16 +137,20 @@ gear.generate = lambda slot, lv, quality, rows=None, rng=None: {
     "main": {"atk": 10, "hp": 0, "def": 0, "dodge": 0}, "affixes": []}
 pl = base_player()
 pl["staff_pity"] = 0
+# 仓库必须跨轮共用：boss 池里 weapon:2:100 是必掉紫装，49 轮足以填满 20 格背包，
+# 之后所有掉落（含第 50 次的 staff）都转仓；每次新传 [] 会把物品扔进看不见的临时列表，
+# 导致 has_staff 查不到、pity 被误判。这里模拟引擎里那份持久的 storage。
+store = []
 # boss staff 连续掷失败 49 次：每次 roll 的第一掷（staff 1%）都用 100 失败，之后普通掉落也用 100 失败
 for _ in range(49):
-    loot.roll(CFG, "boss", pl, [], Io(), difficulty=0, rng=SeqRng([100, 100, 100]))
+    loot.roll(CFG, "boss", pl, store, Io(), difficulty=0, rng=SeqRng([100, 100, 100]))
 check("保底：49 次 boss 失败后 pity=49", pl["staff_pity"] == 49)
-loot.roll(CFG, "boss", pl, [], Io(), difficulty=0, rng=SeqRng([100, 100, 100]))
+loot.roll(CFG, "boss", pl, store, Io(), difficulty=0, rng=SeqRng([100, 100, 100]))
 check("保底：第 50 次 boss 必中 staff 且 pity 清零",
-      pl["staff_pity"] == 0 and any(it.get("scaling") == "owner" for it in pl["inventory"]))
+      pl["staff_pity"] == 0 and gear.has_staff(pl, store))
 # 已持有 staff 时 pity 不变
 before = pl["staff_pity"]
-loot.roll(CFG, "boss", pl, [], Io(), difficulty=0, rng=SeqRng([100, 100, 100]))
+loot.roll(CFG, "boss", pl, store, Io(), difficulty=0, rng=SeqRng([100, 100, 100]))
 check("保底：已持有 staff 时 pity 不变", pl["staff_pity"] == before)
 gear.generate = orig_generate
 
