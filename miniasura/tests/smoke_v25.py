@@ -141,9 +141,9 @@ check("30 级满配通 30 层不死（蓝图出口验收）",
 p = new_player(30)
 combat.grant_exp(CFG, p, io, 999999)
 check("30 级封顶：给 999999 经验也不再涨", p["level"] == 30)
-p = new_player(14)
-combat.grant_exp(CFG, p, io, 100)
-check("Lv.14→15 需 100（曲线起点对齐旧 100/级体感）", p["level"] == 15 and p["exp"] == 0)
+p = new_player(1)
+combat.grant_exp(CFG, p, io, 60)
+check("Lv.1→2 需 60（V2.6 曲线恢复蓝图原值 60×lv^1.65）", p["level"] == 2 and p["exp"] == 0)
 needs = [combat.lua("expneed", i, 60, 165)["need"] for i in range(1, 6)]
 check("经验曲线严格单调递增", all(b > a for a, b in zip(needs, needs[1:])))
 
@@ -214,10 +214,10 @@ if bad_lines:
 r = subprocess.run([WB, "engine.py"], input="\n".join(["1"] * 400) + "\n",
                    capture_output=True, text=True, encoding="utf-8", env=ENV)
 after = json.load(open("save.json", encoding="utf-8"))
-# V2.5 基线重定：经验曲线生效后，CLI 全通自然等级由 Lv.32 → Lv.17（金币 918 不变）
-check("CLI 全通回归：地图 10/10、金币 918、Lv.17、h2 done",
+# V2.6 基线重定：Lv.1 开局 + 曲线恢复 60×lv^1.65 → 全通 Lv.25；图10 倍率 1.0 → 金币 798
+check("CLI 全通回归：地图 10/10、金币 798、Lv.25、h2 done（V2.6 重定）",
       "地图推进 10/10" in r.stdout and after["maps_cleared"] == 10
-      and after["gold"] == 918 and after["level"] == 17
+      and after["gold"] == 798 and after["level"] == 25
       and after["quest_flags"].get("h2") == "done")
 os.remove("save.json")
 r = subprocess.run([WB, "tests/smoke_v24.py"], capture_output=True,

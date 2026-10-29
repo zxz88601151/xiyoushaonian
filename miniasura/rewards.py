@@ -34,8 +34,12 @@ def apply_rewards(cfg, player, io, completed, storage):
                 slot, lv, qual = args
                 it = gear.generate(slot, int(lv), int(qual))
                 cur = player["equipment"].get(slot)
-                if cur is None:               # 空位直接穿上（任务奖励即战力）
+                # 空位或新装备品质更高 → 直接穿上（任务奖励即战力，V2.6 起奖励链随进度换装）
+                if cur is None or it["quality"] > cur["quality"]:
                     player["equipment"][slot] = it
+                    if cur is not None:       # 换下的旧装进背包（满了转仓库）
+                        bag = player.setdefault("inventory", [])
+                        (bag.append(cur) if len(bag) < gear.capacity() else storage.append(cur))
                     from engine import apply_gear
                     apply_gear(cfg, player)
                     player["hp"] = min(player["hp"], player["max_hp"])

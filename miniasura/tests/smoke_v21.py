@@ -133,7 +133,8 @@ check("★主门禁：穿暴击+5%蓝装 → 面板 20%→25% 零代码生效",
       p["crit_rate"] == 25 and p["attack"] == 57 + 30)
 
 io_stub = type("S", (), {"say": lambda self, *a: None})()
-engine.grant_exp(cfg, p, io_stub, 100)                      # 升到 15
+# V2.6 曲线（60×lv^1.65）下 Lv.14→15 需 4668 经验，给 5000 保证升级——判据语义不变：升级后装备加成不丢
+engine.grant_exp(cfg, p, io_stub, 5000)                     # 升到 15
 check("★F1 回归：升级重算 apply_gear，装备攻击不丢",
       p["level"] == 15 and p["attack"] == 60 + 30 and p["crit_rate"] == 25)
 

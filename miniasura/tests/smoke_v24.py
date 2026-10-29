@@ -154,9 +154,9 @@ if bad_lines:
 r = subprocess.run([WB, "engine.py"], input="\n".join(["1"] * 500) + "\n",
                    capture_output=True, text=True, encoding="utf-8", env=ENV)
 after = json.load(open("save.json", encoding="utf-8"))
-check("CLI 全通回归：地图 10/10、金币 918、难度 0（不死不强化，金币不动）",
+check("CLI 全通回归：地图 10/10、金币 798（V2.6 重定）、难度 0（不死不强化，金币不动）",
       "地图推进 10/10" in r.stdout and after["maps_cleared"] == 10
-      and after["gold"] == 918 and after["difficulty"] == 0)
+      and after["gold"] == 798 and after["difficulty"] == 0)
 os.remove("save.json")
 r = subprocess.run([WB, "tests/smoke_v23.py"], capture_output=True,
                    text=True, encoding="utf-8", env=ENV)

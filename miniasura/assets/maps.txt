@@ -1,4 +1,5 @@
 # MiniAsura V2.2 十图推进表 —— 序号|地图名|怪物key(逗号分隔,-=无战斗)|对话id|难度倍率
+# V2.6：图10 倍率改 1.0——boss 本体已加强（600/45），再乘 1.6 会超出 Lv.1 开局成长曲线的承受上限
 1|花果山|xiaoyao1|d_map1|1.0
 2|水帘洞|-|d_map2|1.0
 3|斜月三星洞|xiaoyao2|d_map3|1.2
@@ -8,4 +9,4 @@
 7|八卦炉|xiaoyao3,xiaoyao3|d_map7|1.6
 8|五行山|xiaoyao2,xiaoyao3|d_map8|1.7
 9|流沙河|xiaoyao3,xiaoyao3|d_map9|1.8
-10|白骨洞|boss|d_map10|1.6
+10|白骨洞|boss|d_map10|1.0

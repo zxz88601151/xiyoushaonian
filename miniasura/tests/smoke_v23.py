@@ -40,11 +40,12 @@ monsters = engine.parse_kv(texts["monsters.txt"])
 # ── 门禁1 金币与难度倍率（build_maps 纯数据层，无需 Lua）──
 maps0 = engine.build_maps(texts["maps.txt"], cfg, monsters, 0)
 gold0 = sum(f["mon"]["gold"] for m in maps0 for f in m["fights"])
-check("普通难度金币合计 918", gold0 == 918)
+# V2.6 基线重定：图10 倍率 1.6→1.0（boss 本体已加强），全通金币 918→798；boss 数值重钉
+check("普通难度金币合计 798（V2.6 重定）", gold0 == 798)
 maps1 = engine.build_maps(texts["maps.txt"], cfg, monsters, 1)
 boss1 = [f["mon"] for m in maps1 for f in m["fights"] if f["key"] == "boss"][0]
-check("精英 boss：血 458 / 攻 42 / 经验 1200 / 金币 480",
-      (boss1["hp"], boss1["atk"], boss1["exp"], boss1["gold"]) == (458, 42, 1200, 480))
+check("精英 boss：血 780 / 攻 52 / 经验 82500 / 金币 300（V2.6 重钉）",
+      (boss1["hp"], boss1["atk"], boss1["exp"], boss1["gold"]) == (780, 52, 82500, 300))
 check("难度询问：1/2/3 与非法输入",
       loot.ask_difficulty(type("I", (), {"ask": lambda s, p: "2"})()) == 1
       and loot.ask_difficulty(type("I", (), {"ask": lambda s, p: "x"})()) == 0)
@@ -156,9 +157,9 @@ if bad_lines:
 r = subprocess.run([WB, "engine.py"], input="\n".join(["1"] * 500) + "\n",
                    capture_output=True, text=True, encoding="utf-8", env=ENV)
 after = json.load(open("save.json", encoding="utf-8"))
-check("CLI 全通：地图 10/10、金币 918、难度 0",
+check("CLI 全通：地图 10/10、金币 798（V2.6 重定）、难度 0",
       "地图推进 10/10" in r.stdout and after["maps_cleared"] == 10
-      and after["gold"] == 918 and after["difficulty"] == 0)
+      and after["gold"] == 798 and after["difficulty"] == 0)
 os.remove("save.json")
 r = subprocess.run([WB, "tests/smoke_v22.py"], capture_output=True,
                    text=True, encoding="utf-8", env=ENV)

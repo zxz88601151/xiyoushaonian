@@ -35,9 +35,9 @@ def grant_exp(cfg, player, io, amount):
     old = player["level"]
     player["level"], player["exp"] = res["level"], res["exp"]
     if player["level"] > old:
-        from engine import apply_gear   # 升级重算全属性（终审 F1 回归）
-        apply_gear(cfg, player)
-        io.say(f"  ★ 升级！现在 Lv.{player['level']}，攻击力 {player['attack']}")
+        from engine import apply_gear; apply_gear(cfg, player)   # 升级重算全属性（F1 回归）
+        player["hp"] = player["max_hp"]   # V2.6：升级回满血——否则十图磨血必死于终幕
+        io.say(f"  ★ 升级！现在 Lv.{player['level']}，攻击力 {player['attack']}，HP 回满")
 
 
 def use_potion(cfg, player, io):

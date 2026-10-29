@@ -26,7 +26,7 @@ def layer_mon(cfg, n):
             "name": "无底洞 %d 层·%s" % (n, "守层妖王" if boss else "游魂"), "intro": "越往下越暗，妖气浓得化不开。",
             "hp": round(t.getint("hp_base") + n * t.getfloat("hp_per_layer")),
             "atk": round(t.getint("atk_base") + n * t.getfloat("atk_per_layer")),
-            "exp": round(t.getint("exp_base") + n * t.getfloat("exp_per_layer")),
+            "exp": round(t.getint("exp_base") * n ** (t.getint("exp_pow_x100", 165) / 100)),
             "gold": round(t.getint("gold_base") + n * t.getfloat("gold_per_layer"))}
 
 
