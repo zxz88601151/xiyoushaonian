@@ -11,6 +11,13 @@ os.chdir(HERE)
 WB = sys.executable
 ENV = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
 
+# 开场清场：上次运行（含中途崩溃）残留的账号/会话/存档一律清掉，保证可重复执行
+import shutil as _sh0
+for _f in ("save.json", "session.json", "accounts.json"):
+    if os.path.exists(_f):
+        os.remove(_f)
+_sh0.rmtree("saves", ignore_errors=True)
+
 ok = []
 
 

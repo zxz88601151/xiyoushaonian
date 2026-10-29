@@ -209,7 +209,7 @@ def run_game(io):
     io.say(f"地图推进 {maps_cleared}/{len(maps)}   第 {week} 周目   "
            f"击杀合计 {sum(v for k, v in tracker.kills.items() if not k.startswith('lose:'))}")
     io.say(f"金币 {player.get('gold', 0)}   难度 {loot.DIFF_NAMES[difficulty]}")
-    io.say("击杀：" + " ".join(f"{monsters[k][0]}x{v}" for k, v in tracker.kills.items() if not k.startswith("lose:")) or "击杀：无")
+    io.say("击杀：" + (" ".join(f"{monsters[k][0]}x{v}" for k, v in tracker.kills.items() if not k.startswith("lose:")) or "无"))
 
 
 def main():

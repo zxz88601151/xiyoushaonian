@@ -33,7 +33,7 @@
 ├── lesson03/        ← mypack.py（被 miniasura 复用）
 ├── lesson04/  lesson05/
 ├── tools/           ← lua-5.1.5（自编译解释器）
-└── miniasura/       ← 按斗战神图纸复刻的文字版游戏（V2.2）
+└── miniasura/       ← 按斗战神图纸复刻的文字版游戏（V2.4）
 ```
 
 ## 进度记录
@@ -69,6 +69,10 @@
 | 2026-10-28 | V2.0 动工并六门禁全过：login/save(注入+迁移)/slots/gm/app 路由 + gui 三窗 + gui.py 降级战斗窗 + engine 改 week/playtime。门禁实录——①offscreen 全链路 18 项含会话恢复 ✓ ②v1 迁移两形态（中断档数值不丢 / cleared→week1）✓ ③fail-closed（空/重名注册、错密码、无会话 gm、wipe 确认）✓ ④GM 三命令管道实测 ✓ ⑤engine.py grep Qt/user/server 零命中 ✓ ⑥CLI dev 模式回归通关 + schema2 落盘 ✓。门禁抓出并修复 3 bug（do_login 空会话 None、pick_server 回错窗、write_raw 不建目录链），测试产物已清理 | ✅ V2.0 毕业 |
 | 2026-10-28 | V2.1（背包+装备+词条）用户侧完工 + 中哥驻场监督终审：公式全住 equip.lua（品质倍率/五部位/词条区间/紫装保底中位）、affixes.txt 进包、schema 3、gm give、gui_bag 穿卸丢。终审修复 7 处——F1 真 bug：升级 grant_exp 用基础攻击覆盖装备加成（改 apply_gear 重算）✱ / F2 _pick 候选空裸 IndexError → ValueError 明报 / F3 容量 20 硬编码 → game.ini [bag] / F4 totals 未知词条 key 显式报错（白名单对齐）/ F5 gm give 品质/部位/lv 校验 / F6 背包详情弹窗 → 内嵌标签 / F7 smoke_v21 并入主门禁。24/24 全绿（含 30 种子词条性质批跑、暴击 20%→25% 主门禁、吸血实战、v2→v3 迁移、V2.0 回归 18/18、CLI 通关）。已知偏差：engine.py 221 行超 200 纪律（V2.2 拆 battle 模块时解决） | ✅ V2.1 毕业 |
 | 2026-10-28 | **V2.2 通关**（业主授权动工，DESIGN_V2_2.md 冻结 + §8 五条实测修订）：对话系统 dialogue.py（io 抽象播放/跳过/重看，CLI+GUI 通用）+ 任务系统 quests.py（单向状态机，主线6+支线3+隐藏1）+ combat.py 战斗拆分（engine 221→195 行销账）+ rewards.py 奖励发放 + 十图推图 maps.txt（难度倍率缩放）+ 商店 gui_shop（买药/白装回收30%/仓库入口，临时货币=经验点）+ gui_bag 仓库双模式 + gui_quests 重看防剧透 + schema 4（quest_flags/kills/maps_cleared/potions/storage，v1→v4 跨三级迁移实测）+ gm quest/map/potion 三命令。平衡探针立功：纯普攻第9图必死 → [growth] hp_per_level=6 + 任务奖励空部位自动穿戴。门禁抓出 2 真 bug：hidden 任务从未激活（监听者没上岗）+ 死亡不发 lose 事件（死亡改落盘，跨局败北计数可累积）。smoke_v22 共 27 项全绿（十任务全通/跳过不推进/隐藏任务真触发/商店闭环/任务窗重看/GM fail-closed/行数纪律/V2.0+V2.1 回归）。测试产物已清理 | ✅ V2.2 毕业 |
+| 2026-10-29 | 中哥驻场审计修复 4 处：用药提示文案对齐行为 / 注册用户名拒绝路径非法字符（防目录崩溃与路径逃逸）/ gm 数字参数 _int() fail-closed / 隐藏任务未完成拒绝重看对话（防剧透绕过）；smoke_v22 27 项回归全绿 | ✅ 审计过 |
+| 2026-10-29 | 逃跑语义修复：mon 补传 key（此前 boss 战也能逃跑）+ 逃跑不再推进（此前与 win 共用 fi+=1，一路逃跑也能通关），只落盘到本场开打前位置 | ✅ 修复 |
+| 2026-10-29 | **V2.3 毕业**：金币经济（临时经验货币退役，金币掉落/消费/回收全链）+ 掉落引擎 loot.py（概率/品质/满包转仓库/难度倍率 DIFF_MULT）+ 副本三难度（普通/精英/噩梦，新周目重问、续档不重问）+ schema 5 + gm gold/difficulty | ✅ V2.3 毕业 |
+| 2026-10-29 | **V2.4 毕业**：装备强化 enhance.py（+0~+10，主属性 atk/hp/def ×(1+0.05×enh)，闪避与词条不乘）+ 保底符（失败保级）+ 死亡惩罚（扣当前经验 10% 向下取整，不掉级，<10 不扣）+ 铁匠窗 gui_enhance + schema 6（gold/difficulty/protect/装备 enh，v1→v6 全链迁移实测）+ gm protect；门禁门 smoke_v23/v24 上线，开场清场加固保证可重复执行 | ✅ V2.4 毕业 |
 
 ## 环境（搬迁后需注意）
 | 项 | 值 |
@@ -84,5 +88,5 @@
 cd /d D:/西游记文字版/miniasura
 D:/Software/Python313/python.exe app.py     :: GUI 全链路
 python engine.py                            :: CLI 文字版
-D:/Software/Python313/python.exe tests\smoke_v22.py   :: 全套门禁 27 项
+D:/Software/Python313/python.exe tests\smoke_v24.py   :: 全套门禁（v22→v23→v24 回归链，可重复执行）
 ```
