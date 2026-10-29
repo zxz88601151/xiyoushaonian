@@ -33,7 +33,7 @@
 ├── lesson03/        ← mypack.py（被 miniasura 复用）
 ├── lesson04/  lesson05/
 ├── tools/           ← lua-5.1.5（自编译解释器）
-└── miniasura/       ← 按斗战神图纸复刻的文字版游戏（V2.8）
+└── miniasura/       ← 按斗战神图纸复刻的文字版游戏（V2.9-A）
 ```
 
 ## 进度记录
@@ -77,22 +77,56 @@
 | 2026-10-29 | **V2.6 毕业**（DESIGN_V2_6.md 冻结）：**Lv.1 开局**（蓝图 §1 终落地）+ 经验曲线恢复蓝图原值 60×lv^1.65（V2.5 的 100 基数是 Lv.14 开局临时对齐，本期被原值取代）+ 十图数值重钉（怪物 exp 800/2000/4000/55000 按通关 ~Lv.25 校准；boss 加强 220/20→600/40；图10 倍率 1.6→1.0）+ 两个实测倒逼的行为决策：**升级回满血**（否则十图磨血 226 点必死于终幕）与**任务奖励品质更高自动换装**（否则武器堵在首件白装，终幕战力不足）+ 任务奖励装备等级下调（15~18→2/5/8/12 随 Lv.1 进度）+ 爬塔经验改曲线 30×N^1.65（Lv.25 满配爬 30 层恰好顶到 30 级封顶，闭环验证）。基线显式重定：CLI 全通等级 17→25、金币 918→798（boss scale 1.0 所致），smoke_v21 升级判据改 grant 5000（语义不变），蓝图曲线表 16715 与公式 16419 不符处以公式为权威。smoke_v26 六门禁全绿 + v21→v25 全链回归绿 | ✅ V2.6 毕业 |
 | 2026-10-29 | **V2.7 毕业**（PATCH-V27 补丁稿转正冻结为 DESIGN_V27.md，D1–D5 默认值全部采纳）：十技能补齐（主动 6 + 被动 3，解锁档 3/6/10/14/18/22/26/29/30 对齐蓝图表；技能菜单灰字显示 Lv.解锁/冷却中/MP 不足）+ 战斗 CD 表（棒扫六合 3 回合 / 如意神通 5，出战斗清零）+ 命中/闪避（蓝图 §1.3 公式：95%+命中−闪避下限 60%，MISS 不触发暴击/吸血/连击后续段，筋斗云 buff 仅下回合加法叠加）+ 武器谱特效（紫档武器取名挂 effect：定水枪 ×1.15 打水族 / 降魔杖 ×1.12 打妖 / 白骨剑暴伤 +15 / 缠丝爪吸血 +3% 与词条合计上限 10%）+ battle.lua damage/incoming 加可选参数（缺省=旧行为）+ monsters.txt 加 tribe 列 + validate 加 V27-01/02 九项。实现期修 3 真 bug：被动暴击重复计数词条、闪避 buff 单位错位（0.30 小数 vs 30 百分数）、连击 MISS 用 continue 未中断。基线显式重定：smoke_v21 crit 25→33（火眼金睛 +8）、smoke_v25 面板 ×1.10、CLI 全通输入 400→500（MISS 拉长战斗）。skills.py 141 行 / validate.py 150 行 / combat.py 129 行 / engine.py 220 行全部顶格达标；smoke_v27 六门禁全绿 + v21→v26 全链回归绿（v27 幂等双跑） | ✅ V2.7 毕业 |
 | 2026-10-29 | **V2.8 毕业**（DESIGN_V2_8.md 施工版冻结，Kit 两处裁决：一窗四页 / 同档替换）：图鉴·成就·统计一窗四页（武器谱 10 把 ●/○+计数、怪物图鉴 7 行 ×击杀数、成就 6 项、统计 7 项含时长格式化）+ progress.py（成就判定纯函数 evaluate / 图鉴并集 merge_codex / 统计口径唯一汇总处）+ schema 8（achievements/codex_weapons/total_damage，v7→v8 旧值一字不动）+ total_damage 伤害累计（combat 同行追加、跨周目 dmg_carry 继承）+ tribe 实怪补齐（虾兵/蟹将=水族上图4、火妖=火抗上图7，数值同档替换使 V2.6 全通基线零位移）+ validate 加 V28-01/02/03 成十二项（**上限显式修订 150→160**）。成就永不回归：save.write 与 tower.persist 均取「旧档 ∪ 本次」并集。smoke_v28 六门禁全绿 + v21→v27 全链回归绿 | ✅ V2.8 毕业 |
+| 2026-10-29 | **V2.9-A 毕业**（DESIGN_V2_9_A.md 冻结，schema 8→9，只做头脑风暴 §8 的 A 一行）：战斗结算战报（`combat.battle` 新增 report 字典 → rounds/dealt/taken/crits/misses，win/dead 后打印一行战报，逃跑不打印）+ BOSS 阈值变招（`[boss_phase]` 住 game.ini：50% 变身 atk×1.2 / 30% 狂暴再×1.2 且玩家伤害×1.2 / 变身后每 2 回合骨刺雨 max(5, max_hp×5%) 不吃防御；原稿"狂暴防御−20%"在现行无怪物防御项的公式里无效果，**诚实翻译**为"玩家对其伤害×1.2"）+ 精英/稀有怪（种子由 `(week, 地图, fi)` md5 稳定哈希，r<20 精英 hp×1.5/atk×1.2 + 三词缀甲硬/灼烧/疾风，20≤r<25 稀有 hp×0.5/atk×0.5，逃跑重打结果不变防刷；经验金币不变以保全通基线）+ 掉落保底（新字段 `staff_pity`，boss staff 掷失败 +1，pity≥49 第 50 次必中并清零，已持有则不变）+ 新模块 encounter.py 154 行（上限 160）+ validate 增 V29-01/02/03 成十五项。数值取舍：精英 atk 取 ×1.2 而非原稿 ×1.5（×1.5 会让 CLI 全通在双战斗图送命）。smoke_v29a 19 项全绿，v20→v28 全链回归绿 | ✅ V2.9-A 毕业 |
+| 2026-10-29 | **门禁自证修复 + GUI 环境补齐**：审计发现 smoke_v29a 保底两项误判——测试每轮新传 `storage=[]`，而 boss 池 `weapon:2:100` 必掉紫装，49 轮填满 20 格背包后 staff 流入该临时列表，断言只查 `inventory` 故查无。修法：`store` 提到循环外共用（复刻引擎持久仓库），断言升级为 `gear.has_staff(pl, store)`（背包+仓库+已穿戴，比原口径更严）；**反证验证**——临时把保底判定 `>=49` 改 `>=999` 关掉，两条断言立刻变红，证明未削弱测试。同时给沙箱默认 Python 补齐 PySide6 6.12.0（此前 `smoke_v28 回归 ✗` 纯属缺 Qt 而非业务回归），装后 `pip check` 无损坏依赖、`QApplication` 可创建、offscreen 启动 app.py 无异常。整链 `v20→…→v29a` 19/19 全绿（3m55s）。提交 8eda792 | ✅ 修复过 |
 
 ## 环境（搬迁后需注意）
 | 项 | 值 |
 |---|---|
 | 项目根 | `D:/西游记文字版` |
-| Python（纯逻辑/CLI） | `python`（系统 PATH 中，3.13.x） |
-| Python（GUI 需 PySide6） | `D:/Software/Python313/python.exe`（沙箱默认 Python 无 Qt） |
+| Python（CLI + GUI 通用） | `python`（系统 PATH 中，3.13.14）—— **2026-10-29 起已带 PySide6 6.12.0，GUI 与全套门禁可直接用它跑**（此前它无 Qt，只能跑纯逻辑） |
+| Python（备用 GUI 解释器） | `D:/Software/Python313/python.exe`（同 3.13.14 + PySide6 6.12.0；两套 site-packages 互相独立，装包不共享） |
+| PySide6 | **6.12.0 / Qt 6.12.0 —— 测试硬依赖，非可选**，见下节 |
 | Lua 解释器 | `..\tools\lua-5.1.5\lua.exe`（脚本内部已用相对路径，无需 PATH） |
 | 用户 PATH 旧条目 | `F:/WeGameApps/斗战神/learn-lab/tools/lua-5.1.5` 已失效 → 需改为 `D:/西游记文字版/tools/lua-5.1.5` 才能在终端直接敲 `lua` |
+
+### PySide6 是测试硬依赖（不是"想看图才装"）
+门禁不是纯逻辑测试，Qt 缺了整条回归链会红：
+
+- `smoke_v22` 起 GUI 用例直接 `from PySide6.QtWidgets import QApplication`，开真窗口断言控件
+- `smoke_v28` 末尾「字体引导」门禁用 offscreen 平台加载系统中文字体（保证截图取证可读）
+- `smoke_v29a` 串行回归 `v20→v21→…→v28→v29a`，任一环 import 失败即全链报红
+
+**缺件时的症状很坑**：链跑到 v28 末尾才抛 `ModuleNotFoundError`，v29a 汇总只显示一行
+「`smoke_v28 回归 ✗`」，看起来像业务回归，实际是环境缺件。先自检：
+
+```
+python -c "import PySide6; print(PySide6.__version__)"
+```
+
+装法：
+
+```
+python -m pip install PySide6
+```
+
+> 受限环境若报 `SAFE_DELETE_BULK_GUARD`：那是 pip 覆盖旧文件时的 `unlink` 撞上了批量删除保护，
+> wheel 往往已完整落地——先 `python -m pip check` 复查导入是否正常；确有问题就装进独立 venv
+> 或改用 `--target` 目录，避开对既有文件的覆盖。
+
+**跑测注意**：全套回归链约 3.5–4 分钟，超出默认命令超时会被 SIGTERM 截断，且管道缓冲会吞掉全部输出
+（表现为"无任何输出"）。务必加 `-u` 关缓冲，必要时后台运行：
+
+```
+python -u tests/smoke_v29a.py
+```
 
 启动：
 ```
 cd /d D:/西游记文字版/miniasura
-D:/Software/Python313/python.exe app.py     :: GUI 全链路
-python engine.py                            :: CLI 文字版
-D:/Software/Python313/python.exe tests\smoke_v28.py   :: 全套门禁（v21→…→v28 回归链，可重复执行）
-D:/Software/Python313/python.exe validate.py          :: 数据校验器（十二项：七项数据表 + V27-01/02 技能/特效 + V28-01/02/03 成就/新怪/地图，上限 160）
-python tower.py                                       :: V2.5 无底洞爬塔 CLI（通关一次后解锁）
+python app.py                 :: GUI 全链路
+python engine.py              :: CLI 文字版
+python -u tests/smoke_v29a.py :: 全套门禁（v20→…→v29a 回归链，可重复执行，约 4 分钟）
+python validate.py            :: 数据校验器（十五项：七项数据表 + V27 技能/特效 + V28 成就/新怪/地图 + V29 阈值/精英/保底，上限 160）
+python tower.py               :: V2.5 无底洞爬塔 CLI（通关一次后解锁）
 ```
