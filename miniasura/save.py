@@ -1,4 +1,4 @@
-# MiniAsura 存档外围 —— schema 6（V2.0 §3 + V2.1 §2 + V2.2 §3 + V2.3 金币/难度 + V2.4 强化/保底符）。
+# MiniAsura 存档外围 —— schema 7（V2.0 §3 + V2.1 §2 + V2.2 §3 + V2.3 金币/难度 + V2.4 强化/保底符 + V2.5 爬塔）。
 # 路径由登录链经 set_path() 注入；engine 只调 load/write，不认识账号。
 # CLI dev 模式（python engine.py）不注入 = 用默认路径，v1 行为保持。
 import json
@@ -8,7 +8,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PATH = os.path.join(HERE, "save.json")
 _USER = ""
 
-SCHEMA = 6
+SCHEMA = 7
 SLOT_KEYS = ("weapon", "helm", "armor", "belt", "boots")
 
 
@@ -30,7 +30,7 @@ def load():
 
 
 def _migrate(old):
-    # 迁移链：v1（cleared 布尔）→ v2（week/playtime）→ v3（背包/装备）→ v4（任务/图/药/仓库）→ v5（金币/难度）→ v6（强化/保底符）
+    # 迁移链：v1（cleared 布尔）→ v2（week/playtime）→ v3（背包/装备）→ v4（任务/图/药/仓库）→ v5（金币/难度）→ v6（强化/保底符）→ v7（爬塔层数）
     # 规则只补默认值不改已有数值——升档不许丢东西
     if "cleared" in old:
         old["week"] = 1 if old.pop("cleared") else 0
@@ -47,6 +47,8 @@ def _migrate(old):
     old.setdefault("gold", 0)              # V2.3：金币
     old.setdefault("difficulty", 0)        # V2.3：难度 0普通/1精英/2噩梦
     old.setdefault("protect", 0)           # V2.4：保底符张数
+    old.setdefault("tower_best", 0)        # V2.5：无底洞历史最高层
+    old.setdefault("tower_layer", 0)       # V2.5：本次爬塔所在层（支持续爬）
     for it in list(old.get("inventory", [])) + list(old.get("storage", [])):
         if isinstance(it, dict):
             it.setdefault("enh", 0)        # V2.4：旧装备补强化等级
@@ -73,6 +75,8 @@ def write(player, next_index, week, playtime, maps_cleared=0,
         "maps_cleared": maps_cleared,
         "potions": player.get("potions", {"hp": 0, "mp": 0}),
         "storage": storage or [],
+        "tower_best": player.get("tower_best", 0),
+        "tower_layer": player.get("tower_layer", 0),
     })
 
 

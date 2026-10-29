@@ -88,7 +88,8 @@ class BagWindow(QWidget):
             it = eq.get(s)
             self.equip_lab[i].setText(gear.item_line(it) if it else "（空）")
             self.unequip_btn[i].setEnabled(bool(it) and self.source == "inventory")
-        tot = gear.totals(eq)
+        # V2.5：无级别武器按持有者等级算攻击——面板必须与实战同源
+        tot = gear.totals(eq, self.data.get("level", 1))
         self.stats.setText(
             f"装备加成合计：攻击+{tot['atk']:.1f}  HP+{tot['hp']:.0f}  "
             f"防御+{tot['def']:.1f}\n暴击率+{tot['crit']:.1f}%  暴伤+{tot['critdmg']:.0f}%  "

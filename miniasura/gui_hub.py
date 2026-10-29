@@ -8,8 +8,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 class HubWindow(QWidget):
     def __init__(self, go_battle, go_bag, go_login, go_quests=None, go_shop=None,
-                 go_enhance=None):
+                 go_enhance=None, go_tower=None):
         super().__init__()
+        self.go_tower = go_tower or (lambda: None)
+        self.tower_btn = QPushButton("无底洞（爬塔）")     # OD-V25-03：通关一次后才显示
+        self.tower_btn.clicked.connect(self.go_tower)
         news = QTextEdit()
         news.setReadOnly(True)
         with open(os.path.join(HERE, "news.txt"), encoding="utf-8") as f:
@@ -34,6 +37,14 @@ class HubWindow(QWidget):
         lay.addWidget(quest)
         lay.addWidget(shop)
         lay.addWidget(enhance_btn)
+        lay.addWidget(self.tower_btn)
         lay.addWidget(bag)
         lay.addWidget(out)
         self.setLayout(lay)
+        self.tower_btn.hide()          # 默认隐藏，refresh() 按存档解锁情况决定显隐
+
+    def refresh(self):
+        """V2.5：爬塔入口按通关情况显隐（周目 ≥1 或已爬过塔）。"""
+        import save
+        import tower
+        self.tower_btn.setVisible(tower.unlocked(save.load()))

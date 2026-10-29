@@ -57,8 +57,8 @@ save.write_raw({"schema": 4, "user": "", "level": 14, "exp": 10, "hp": 100, "mp"
                 "inventory": [{"slot": 0, "lv": 5, "quality": 0,
                                "main": {"atk": 1, "hp": 0, "def": 0, "dodge": 0}, "affixes": []}]})
 d = save.load()
-check("v4→v6 迁移：schema 6、金币 0、难度 0、保底符 0、旧装备 enh=0、等级不丢",
-      d["schema"] == 6 and d["gold"] == 0 and d["difficulty"] == 0 and d["protect"] == 0
+check("v4→v%d 迁移：schema %d、金币 0、难度 0、保底符 0、旧装备 enh=0、等级不丢" % (save.SCHEMA, save.SCHEMA),
+      d["schema"] == save.SCHEMA and d["gold"] == 0 and d["difficulty"] == 0 and d["protect"] == 0
       and d["inventory"][0]["enh"] == 0 and d["level"] == 14)
 os.remove("save.json")
 

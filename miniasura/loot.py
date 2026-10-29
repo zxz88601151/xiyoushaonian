@@ -46,6 +46,11 @@ def roll(cfg, mon_key, player, storage, io, difficulty=0, rng=random):
     for slot, quality, chance in rows:
         if rng.randint(1, 100) > chance:
             continue
+        if slot == "staff":      # 无级武器掉落：走 gear 唯一发放口
+            got = gear.grant_staff(player, storage, io)
+            if got is not None:
+                return got
+            continue             # 已持有 → 跳过，继续掷后面的普通掉落
         quality = min(2, quality + difficulty)
         try:
             item = gear.generate(slot, player["level"], quality)

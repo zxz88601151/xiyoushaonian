@@ -89,8 +89,8 @@ save.write_raw({"schema": 5, "user": "", "level": 14, "exp": 0, "hp": 150, "mp":
                 "equipment": {"weapon": None, "helm": None, "armor": None,
                               "belt": None, "boots": None}})
 d = save.load()
-check("v5→v6：schema 6、protect 0、旧装备 enh=0、金币不丢",
-      d["schema"] == 6 and d["protect"] == 0 and d["inventory"][0]["enh"] == 0
+check("v5→v%d：schema %d、protect 0、旧装备 enh=0、金币不丢" % (save.SCHEMA, save.SCHEMA),
+      d["schema"] == save.SCHEMA and d["protect"] == 0 and d["inventory"][0]["enh"] == 0
       and d["gold"] == 100)
 os.remove("save.json")
 
@@ -141,7 +141,8 @@ for f in ("accounts.json", "session.json"):
 save.set_path(os.path.join(HERE, "save.json"))
 
 # ── 门禁6 行数与回归──
-limits = {"engine.py": 220, "enhance.py": 150, "gui_enhance.py": 200}
+limits = {"engine.py": 220, "enhance.py": 150, "gui_enhance.py": 200,
+          "tower.py": 100, "validate.py": 150, "gui_tower.py": 200}
 bad_lines = []
 for f, lim in limits.items():
     n = sum(1 for _ in open(f, encoding="utf-8"))

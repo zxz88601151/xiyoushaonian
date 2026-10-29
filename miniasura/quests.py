@@ -81,8 +81,12 @@ class Tracker:
                 mon, need = t.split(":")
                 if mon == arg and self.kills.get(mon, 0) >= int(need):
                     self._finish(q["key"], done)
-            elif q["type"] == "hidden" and ev == "lose":
-                _, mon, need = t.split(":")
-                if mon == arg and self.kills.get("lose:" + mon, 0) >= int(need):
-                    self._finish(q["key"], done)   # 触发即完成（彩蛋叙事）
+            elif q["type"] == "hidden":
+                # hidden 开局即挂监听：lose:怪:N 败北触发 / map:N 通图触发（V2.5 h2 真假美猴王）
+                if t.startswith("map:") and ev == "map" and arg == int(t.split(":")[1]):
+                    self._finish(q["key"], done)
+                elif t.startswith("lose:") and ev == "lose":
+                    _, mon, need = t.split(":")
+                    if mon == arg and self.kills.get("lose:" + mon, 0) >= int(need):
+                        self._finish(q["key"], done)   # 触发即完成（彩蛋叙事）
         return done

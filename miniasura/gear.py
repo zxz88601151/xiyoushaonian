@@ -87,7 +87,45 @@ def generate(slot, lv, quality, rows=None, rng=random):
     return item
 
 
+STAFF_NAME = "如意金箍棒·无级"
+STAFF_ATK_BASE, STAFF_ATK_PER_LEVEL = 10, 6   # 蓝图 §2.4：ATK = 10 + 持有者等级 × 6
+
+
+def make_staff():
+    """无级别武器（蓝图 §2.4）：攻击随持有者等级重算，词条固定三条满值，不掷骰。"""
+    return {"slot": 0, "lv": 0, "quality": 2, "enh": 0, "scaling": "owner",
+            "main": {"atk": 0, "hp": 0, "def": 0, "dodge": 0},
+            "affixes": [{"key": "leech", "name": "吸血%", "val": 5.0},
+                        {"key": "critdmg", "name": "暴伤%", "val": 25.0},
+                        {"key": "crit", "name": "暴击率%", "val": 5.0}]}
+
+
+def has_staff(player, storage=None):
+    """是否已持有无级武器（背包 + 仓库 + 已穿戴全查）——发放口的幂等闸。"""
+    items = list(player.get("inventory", [])) + list(storage or []) + [
+        it for it in (player.get("equipment") or {}).values() if it]
+    return any(it.get("scaling") == "owner" for it in items)
+
+
+def grant_staff(player, storage, io):
+    """唯一发放口（隐藏任务 h2 与 boss 掉率共用）——已持有则不再发，防刷出一背包棒子。"""
+    if has_staff(player, storage):
+        io.say(f"  （{STAFF_NAME} 已在手，不再重复发放）")
+        return None
+    it = make_staff()
+    bag = player.setdefault("inventory", [])
+    if len(bag) < capacity():
+        bag.append(it)
+        io.say(f"  🗡 获得 {item_line(it)}（已进背包）")
+    else:
+        storage.append(it)
+        io.say(f"  🗡 获得 {item_line(it)}（背包已满，转入仓库）")
+    return it
+
+
 def item_name(item):
+    if item.get("scaling") == "owner":
+        return STAFF_NAME + (f" +{item['enh']}" if item.get("enh") else "")
     name = f"{QUALITY_NAMES[item['quality']]}·{SLOT_NAMES[SLOTS[item['slot']]]} Lv{item['lv']}"
     if item.get("enh", 0):
         name += f" +{item['enh']}"
@@ -97,6 +135,8 @@ def item_name(item):
 def item_line(item):
     """一行人话描述（背包列表/详情用）。"""
     parts = [item_name(item)]
+    if item.get("scaling") == "owner":
+        parts.append(f"攻击+随等级（{STAFF_ATK_BASE} + 等级×{STAFF_ATK_PER_LEVEL}）")
     if item["main"]["atk"]:
         parts.append(f"攻击+{item['main']['atk']}")
     if item["main"]["hp"]:
@@ -110,8 +150,9 @@ def item_line(item):
     return "  ".join(parts)
 
 
-def totals(equipment):
-    """聚合穿戴加成（细案 §1 簿记约定：百分比词条以 主属性+平铺 为基数）。"""
+def totals(equipment, owner_level=1):
+    """聚合穿戴加成（细案 §1 簿记约定：百分比词条以 主属性+平铺 为基数）。
+    owner_level：无级别武器（scaling:"owner"）按持有者等级算攻击——本期架构上唯一的有意破例。"""
     base = {"atk": 0.0, "hp": 0.0, "def": 0.0, "dodge": 0.0}
     pct = {"atk": 0.0, "hp": 0.0}
     add = {"crit": 0.0, "critdmg": 0.0, "leech": 0.0, "exp": 0.0}
@@ -120,8 +161,11 @@ def totals(equipment):
             continue
         # V2.4 强化：主属性 atk/hp/def × (1 + 0.05 × enh)，闪避与词条不乘。
         mult = 1 + 0.05 * it.get("enh", 0)
-        for k, v in it["main"].items():
-            base[k] += v * mult if k != "dodge" else v
+        if it.get("scaling") == "owner":   # 无级别武器：攻击 = (10 + 等级×6) × 强化倍率
+            base["atk"] += (STAFF_ATK_BASE + STAFF_ATK_PER_LEVEL * owner_level) * mult
+        else:
+            for k, v in it["main"].items():
+                base[k] += v * mult if k != "dodge" else v
         for a in it["affixes"]:
             if a["key"] in ("atkflat", "defflat"):
                 base["atk" if a["key"] == "atkflat" else "def"] += a["val"]

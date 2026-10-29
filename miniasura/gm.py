@@ -11,7 +11,12 @@ import slots
 
 USAGE = ("用法: gm.py setlevel <n> | next <k> | give <slot> [lv] [quality=2]"
          " | quest <key> | map <n> | potion <hp|mp> <n> | gold <n>"
-         " | difficulty <0|1|2> | protect <n> | wipe")
+         " | difficulty <0|1|2> | protect <n> | tower <n> | staff | wipe")
+
+
+class _Io:                       # V2.5：发放口要 io.say，GM 直接打到控制台
+    def say(self, msg=""):
+        print(msg)
 
 
 def current_slot():
@@ -116,6 +121,11 @@ def main():
             sys.exit(1)
         data["difficulty"] = n
         print("难度 → %d" % n)
+    elif cmd == "tower" and len(sys.argv) == 3:
+        data["tower_layer"] = _int(sys.argv[2])          # 本次所在层（续爬起点）
+        print("爬塔层 → %d（历史最高 %d）" % (data["tower_layer"], data.get("tower_best", 0)))
+    elif cmd == "staff":
+        gear.grant_staff(data, data.setdefault("storage", []), _Io())
     else:
         print(USAGE)
         sys.exit(1)

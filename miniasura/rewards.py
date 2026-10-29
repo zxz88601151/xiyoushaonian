@@ -28,6 +28,8 @@ def apply_rewards(cfg, player, io, completed, storage):
             elif kind == "potion_mp":
                 player["potions"]["mp"] += int(args[0])
                 io.say(f"  获得蓝瓶 x{args[0]}")
+            elif kind == "staff":
+                gear.grant_staff(player, storage, io)   # 与 boss 掉率共用同一个发放口
             elif kind == "gear":
                 slot, lv, qual = args
                 it = gear.generate(slot, int(lv), int(qual))

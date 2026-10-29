@@ -33,7 +33,7 @@
 ├── lesson03/        ← mypack.py（被 miniasura 复用）
 ├── lesson04/  lesson05/
 ├── tools/           ← lua-5.1.5（自编译解释器）
-└── miniasura/       ← 按斗战神图纸复刻的文字版游戏（V2.4）
+└── miniasura/       ← 按斗战神图纸复刻的文字版游戏（V2.5）
 ```
 
 ## 进度记录
@@ -73,6 +73,7 @@
 | 2026-10-29 | 逃跑语义修复：mon 补传 key（此前 boss 战也能逃跑）+ 逃跑不再推进（此前与 win 共用 fi+=1，一路逃跑也能通关），只落盘到本场开打前位置 | ✅ 修复 |
 | 2026-10-29 | **V2.3 毕业**：金币经济（临时经验货币退役，金币掉落/消费/回收全链）+ 掉落引擎 loot.py（概率/品质/满包转仓库/难度倍率 DIFF_MULT）+ 副本三难度（普通/精英/噩梦，新周目重问、续档不重问）+ schema 5 + gm gold/difficulty | ✅ V2.3 毕业 |
 | 2026-10-29 | **V2.4 毕业**：装备强化 enhance.py（+0~+10，主属性 atk/hp/def ×(1+0.05×enh)，闪避与词条不乘）+ 保底符（失败保级）+ 死亡惩罚（扣当前经验 10% 向下取整，不掉级，<10 不扣）+ 铁匠窗 gui_enhance + schema 6（gold/difficulty/protect/装备 enh，v1→v6 全链迁移实测）+ gm protect；门禁门 smoke_v23/v24 上线，开场清场加固保证可重复执行 | ✅ V2.4 毕业 |
+| 2026-10-29 | **V2.5 毕业**（DESIGN_V2_5.md 冻结，四项业主决议：双轨获取/本期不做Lv.1开局/通关后解锁爬塔/validate入门禁）：无底洞爬塔 tower.py（层数即怪物等级，通关一次后解锁，死亡/撤离清零、最高层保留，续爬+EOF中断保护）+ 无级别武器「如意金箍棒·无级」（ATK=10+等级×6，scaling:"owner" 每次 apply_gear 重算，固定三词条满值，吃强化倍率；双轨：隐藏任务 h2「真假美猴王」通关必得 + boss 1% 掉率，共用同一发放口且幂等）+ 数值平衡（30 级封顶、经验曲线 100×级数^1.65 住 battle.lua，CLI 全通自然等级 Lv.32→Lv.17 显式重定基线）+ validate.py 七项数据校验（掉落/任务奖励/曲线单调/商店/词条限制/v1→v7 迁移/金币对账）+ gui_tower 爬塔窗 + schema 7（tower_best/tower_layer）+ gm tower/staff；smoke_v25 七门禁全绿 + v22/v23/v24 全链回归绿（含 v25 幂等双跑）。engine.py 仍 220 行顶格达标（结算块抽 finish_summary 腾位） | ✅ V2.5 毕业 |
 
 ## 环境（搬迁后需注意）
 | 项 | 值 |
@@ -88,5 +89,7 @@
 cd /d D:/西游记文字版/miniasura
 D:/Software/Python313/python.exe app.py     :: GUI 全链路
 python engine.py                            :: CLI 文字版
-D:/Software/Python313/python.exe tests\smoke_v24.py   :: 全套门禁（v22→v23→v24 回归链，可重复执行）
+D:/Software/Python313/python.exe tests\smoke_v25.py   :: 全套门禁（v22→v23→v24→v25 回归链，可重复执行）
+D:/Software/Python313/python.exe validate.py          :: V2.5 数据校验器（七项数据表编译检查）
+python tower.py                                       :: V2.5 无底洞爬塔 CLI（通关一次后解锁）
 ```

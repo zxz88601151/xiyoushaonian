@@ -90,8 +90,9 @@ os.remove("save.json")
 # ── 门禁3 主门禁：CLI 全通十任务（9 链任务 done；h1 需败北另行验证）──
 r = subprocess.run([WB, "engine.py"], input="\n".join(["1"] * 400) + "\n",
                    capture_output=True, text=True, encoding="utf-8", env=ENV)
-check("CLI 全通：9 任务 done + 地图 10/10",
-      r.stdout.count("[done]") == 9 and "地图推进 10/10" in r.stdout)
+# V2.5 基线重定：新增隐藏任务 h2（通关第 10 图必得无级武器）→ 任务总数 11、全通 done 10 个
+check("CLI 全通：10 任务 done + 地图 10/10",
+      r.stdout.count("[done]") == 10 and "地图推进 10/10" in r.stdout)
 after = json.load(open("save.json", encoding="utf-8"))
 check("通关档 schema4/week1/task完整", after["schema"] == save.SCHEMA
       and after["week"] == 1 and after["maps_cleared"] == 10)
@@ -154,7 +155,7 @@ save.write_raw({"schema": save.SCHEMA, "user": "", "level": 14, "exp": 0,
                 "playtime": 0})
 qw = gui_quests.QuestWindow(lambda: None)
 qw.refresh()
-check("任务窗列出 10 个任务", qw.listw.count() == 10)
+check("任务窗列出 11 个任务（V2.5 加 h2）", qw.listw.count() == 11)
 qw.listw.setCurrentRow(0)
 qw.rewatch()
 check("重看对话弹出内容（不推进任务）", captured

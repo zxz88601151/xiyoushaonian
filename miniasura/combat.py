@@ -1,5 +1,4 @@
-# V2.2 战斗流程模块 —— 自 engine.py 拆出（V2.1 入档的 221 行偏差，本期销账）。
-# 流程在这里，数值公式仍在 scripts/battle.lua：引擎只掷骰（暴击/浮动/概率）。
+# V2.2 战斗流程模块（自 engine.py 拆出）—— 流程在这里，数值公式仍在 scripts/battle.lua：引擎只掷骰。
 import json
 import os
 import random
@@ -29,8 +28,10 @@ def roll_damage(player, power):
 
 def grant_exp(cfg, player, io, amount):
     amount = int(amount * (1 + player.get("exp_bonus", 0)))   # 经验加成词条（V2.1）
-    res = lua("levelup", player["exp"], amount,
-              cfg.getint("growth", "exp_needed"), player["level"])
+    g = cfg["growth"]   # V2.5：每级所需 = exp_base × 距开局级数^曲线（公式住 battle.lua）
+    res = lua("levelup", player["exp"], amount, player["level"], g.getint("level_cap"),
+              g.getint("exp_base"), g.getint("exp_pow_x100"),
+              player["level"] - cfg.getint("player", "level") + 1)
     old = player["level"]
     player["level"], player["exp"] = res["level"], res["exp"]
     if player["level"] > old:

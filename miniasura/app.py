@@ -9,6 +9,7 @@ import gui_bag
 import gui_enhance
 import gui_quests
 import gui_shop
+import gui_tower
 import login
 import save
 import slots
@@ -20,7 +21,7 @@ from gui_slots import ServerWindow, SlotsWindow
 class App(QStackedWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("花果山小妖 —— MiniAsura V2.2")
+        self.setWindowTitle("花果山小妖 —— MiniAsura V2.5")
         self.resize(640, 560)
 
         self.login = LoginWindow(self.to_server, self.to_hub)
@@ -28,7 +29,7 @@ class App(QStackedWidget):
         self.slotsw = SlotsWindow(self.pick_slot, self.to_server)
         self.hub = HubWindow(self.to_battle, self.to_bag, self.logout,
                              go_quests=self.to_quests, go_shop=self.to_shop,
-                             go_enhance=self.to_enhance)
+                             go_enhance=self.to_enhance, go_tower=self.to_tower)
         self.battle = gui.BattleWidget()
         self.battle.back_to_hub.connect(self.to_hub)
         self.bag = gui_bag.BagWindow(self.to_hub)
@@ -36,8 +37,10 @@ class App(QStackedWidget):
         self.shop = gui_shop.ShopWindow(self.to_hub, self.to_storage)
         self.questsw = gui_quests.QuestWindow(self.to_hub)
         self.enhancew = gui_enhance.EnhanceWindow(self.to_hub)
+        self.towerw = gui_tower.TowerWindow(self.to_hub)
         for w in (self.login, self.server, self.slotsw, self.hub, self.battle,
-                  self.bag, self.storage, self.shop, self.questsw, self.enhancew):
+                  self.bag, self.storage, self.shop, self.questsw, self.enhancew,
+                  self.towerw):
             self.addWidget(w)
 
         sess = login.get_session()          # 会话恢复：记住上次登录
@@ -72,7 +75,12 @@ class App(QStackedWidget):
             save.set_path(slots.slot_path(sess["server"], sess["user"],
                                           sess["slot"]), sess["user"])
         self.slotsw.refresh()
+        self.hub.refresh()          # V2.5：进大厅时按存档刷新爬塔入口的显隐
         self.setCurrentWidget(self.hub)
+
+    def to_tower(self):
+        self.towerw.refresh()
+        self.setCurrentWidget(self.towerw)
 
     def to_battle(self):
         self.setCurrentWidget(self.battle)
