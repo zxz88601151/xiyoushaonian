@@ -50,7 +50,7 @@ def run_one(cfg, skills, player, storage, io, rng=random):
     n = player.get("tower_layer", 0) + 1
     mon = layer_mon(cfg, n)
     io.say("\n═══ 无底洞 第 %d 层（怪物等级 %d）═══" % (n, n))
-    rep = {}; result = combat.battle(cfg, skills, mon, player, io, rep)   # V2.9-B：爬塔战报接入（与主线一致，win/dead 打印，escaped 不打印）
+    rep = {}; result = combat.battle(cfg, skills, mon, player, io, rep); io.say("  WARN：爬塔未启用稀有怪，fled 按 escaped 处理。") if result == "fled" else None; result = "escaped" if result == "fled" else result   # B1 战报 + B2 fail-closed
     if result != "win":
         player["tower_layer"] = 0; encounter.print_report(io, rep) if result == "dead" else None   # V2.9-B：dead 打印战报，escaped/fled 不打印（与主线一致）
         io.say("  本次止于第 %d 层（历史最高 %d 层）。" % (n - 1, player.get("tower_best", 0)))

@@ -147,7 +147,7 @@ def main():
             ("6 存档 v1→v%d 迁移" % save.SCHEMA, check_migrate()),
             ("7 金币收支对账", check_gold_flow(cfg)),
             ("8 技能必有解锁等级（V27-01）", check_skills(cfg)),
-            ("9 特效 tribe 合法（V27-02）", check_weapon_tribes())] + check_v28(cfg) + encounter.check_v29(cfg)
+            ("9 特效 tribe 合法（V27-02）", check_weapon_tribes())] + check_v28(cfg) + encounter.check_v29(cfg) + encounter.check_v30(cfg)
     bad = sum(0 if ok else 1 for _, (ok, _) in rows)
     for name, (ok, detail) in rows:
         print(("✓" if ok else "✗"), name, ("" if ok else "  → %s" % detail))

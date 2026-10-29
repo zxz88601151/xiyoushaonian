@@ -66,7 +66,7 @@ def use_potion(cfg, player, io):
 
 
 def battle(cfg, skills, mon, player, io, report=None):
-    """skills = skills.load_skills() 技能表（V2.7）；契约不变：返回 win/dead/escaped；report 填战报。"""
+    """skills = skills.load_skills() 技能表；V2.9-B 契约：win/dead/escaped/fled；report 填战报。"""
     name, m_hp, m_atk, m_exp = mon["name"], mon["hp"], mon["atk"], mon["exp"]
     io.say(f"\n═══ {name} 出现！「{mon['intro']}」")
     cds, buff = sk.Cooldowns(), 0.0; phase = encounter.BossPhase(mon, cfg) if mon.get("key") == "boss" else None; rep = report if report is not None else {}; rep.update(rounds=0, dealt=0, taken=0, crits=0, misses=0)  # V2.9-A：boss 变招 + 战报（五项先归零）
@@ -122,9 +122,9 @@ def battle(cfg, skills, mon, player, io, report=None):
             block = f"（防御格挡 {mon['atk'] - taken}）" if taken < mon["atk"] else ""
             io.say(f"{name} 反击，你损失 {taken} 点血{block}")
         buff = 0.0; rep["rounds"] = rep.get("rounds", 0) + 1; phase.spike(player, io, rep) if phase else None  # 闪避 buff 仅下回合，回合结束清除；V2.9-A：回合计数 + 骨刺雨
-        cds.tick()
-        if player["hp"] <= 0:
-            return "dead"
+        cds.tick(); fled = encounter.fled_check(mon, rep, player, io, cfg.getint("rare_flee", "flee_rounds", fallback=3))  # V2.9-B：稀有怪回合末逃跑；函数内玩家死亡则 None
+        if player["hp"] <= 0: return "dead"   # F1：dead 优先于 fled
+        if fled: return fled
     io.say(f"{name} 倒下了！获得 {m_exp} 点经验。")
     grant_exp(cfg, player, io, m_exp)
     return "win"

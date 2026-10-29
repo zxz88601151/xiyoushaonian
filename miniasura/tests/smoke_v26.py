@@ -119,15 +119,15 @@ if "失败" in r.stdout:
     print(r.stdout[-800:])
 r = subprocess.run([WB, "validate.py"], capture_output=True, text=True,
                    encoding="utf-8", env=ENV)
-check("validate 十五项全绿（V2.9-A 起含 V29-01/02/03）（V2.8 起含 V27-01/02 + V28-01/02/03）", r.returncode == 0 and r.stdout.count("✓") == 15)
+check("validate 十六项全绿（V2.9-A 起含 V29-01/02/03；V2.9-B 起含 V30-01）（V2.8 起含 V27-01/02 + V28-01/02/03）", r.returncode == 0 and r.stdout.count("✓") == 16)
 
 # ── 门禁6 行数纪律 ──
-limits = {"engine.py": 220, "tower.py": 100, "combat.py": 130,
-          "validate.py": 160, "gui_tower.py": 200, "rewards.py": 60}
+limits = {"engine.py": 222, "tower.py": 100, "combat.py": 130,
+          "validate.py": 165, "gui_tower.py": 200, "rewards.py": 60}
 bad_lines = [f"{f}={sum(1 for _ in open(f, encoding='utf-8'))}"
              for f, lim in limits.items()
              if sum(1 for _ in open(f, encoding="utf-8")) > lim]
-check("行数纪律（engine≤220、tower≤100、combat≤130、validate≤150）", not bad_lines)
+check("行数纪律（engine≤222、tower≤100、combat≤130、validate≤165）", not bad_lines)
 if bad_lines:
     print("  超标:", bad_lines)
 

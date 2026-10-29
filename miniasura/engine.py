@@ -195,6 +195,8 @@ def run_game(io):
                 persist(fi, maps_cleared)
                 io.say("\n你溜出了战场。这一场不算打过，回大厅后可重打。")
                 return
+            if result == "fled":
+                io.say("  稀有怪已逃走：不发奖励、不记击杀，继续推进。")   # C1/C2：fall through 到 fi+=1，绝不当 win/lose
             if result == "win":
                 for q in tracker.on_event("win", f["key"]):
                     rewards.apply_rewards(cfg, player, io, [q], storage)

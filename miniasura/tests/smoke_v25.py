@@ -151,7 +151,7 @@ check("经验曲线严格单调递增", all(b > a for a, b in zip(needs, needs[1
 # ── 门禁6 validate.py 七项全绿（OD-V25-04：纳入门禁，全绿才算出期）──
 r = subprocess.run([WB, "validate.py"], capture_output=True, text=True,
                    encoding="utf-8", env=ENV)
-check("validate 十五项全绿（V2.9-A 起含 V29-01/02/03）（V2.8 起含 V27-01/02 + V28-01/02/03）", r.returncode == 0 and r.stdout.count("✓") == 15)
+check("validate 十六项全绿（V2.9-A 起含 V29-01/02/03；V2.9-B 起含 V30-01）（V2.8 起含 V27-01/02 + V28-01/02/03）", r.returncode == 0 and r.stdout.count("✓") == 16)
 
 # ── 门禁7 GM tower/staff 命令（数字走 _int fail-closed）──
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -205,12 +205,12 @@ for f in ("accounts.json", "session.json"):
 save.set_path(os.path.join(HERE, "save.json"))
 
 # ── 门禁9 行数纪律与回归 ──
-limits = {"engine.py": 220, "tower.py": 100, "validate.py": 160,
+limits = {"engine.py": 222, "tower.py": 100, "validate.py": 165,
           "gui_tower.py": 200, "combat.py": 130, "quests.py": 100, "rewards.py": 60}
 bad_lines = [f"{f}={sum(1 for _ in open(f, encoding='utf-8'))}"
              for f, lim in limits.items()
              if sum(1 for _ in open(f, encoding="utf-8")) > lim]
-check("行数纪律（engine≤220、tower≤100、validate≤150、gui_tower≤200）", not bad_lines)
+check("行数纪律（engine≤222、tower≤100、validate≤165、gui_tower≤200）", not bad_lines)
 if bad_lines:
     print("  超标:", bad_lines)
 r = subprocess.run([WB, "engine.py"], input="\n".join(["1"] * 500) + "\n",

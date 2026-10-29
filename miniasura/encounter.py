@@ -100,6 +100,7 @@ def apply_encounter(fight, week, map_no, fi, cfg):
         mon["hp"] = max(1, round(mon["hp"] * _cfg_float(cfg, "encounter", "rare_hp_mult", 0.5)))
         mon["atk"] = max(1, round(mon["atk"] * _cfg_float(cfg, "encounter", "rare_atk_mult", 0.5)))
         mon["name"] = "金色·" + mon["name"]
+        mon["rare"] = True   # V2.9-B：combat 只收 mon，稀有标记必须随 mon 传递
         fight["rare"] = True
     return fight
 
@@ -152,3 +153,18 @@ def check_v29(cfg):
     return [("13 BOSS 阈值合法（V29-01）", (not bad1, bad1)),
             ("14 精英稀有参数合法（V29-02）", (not bad2, bad2)),
             ("15 保底与额外掉落池合法（V29-03）", (not bad3, bad3))]
+
+def is_rare(mon): return bool(mon.get("rare"))   # 看字段，不靠“金色·”名前缀
+
+def fled_check(mon, rep, player, io, flee_rounds=3):
+    if not is_rare(mon) or player.get("hp", 0) <= 0: return None   # combat 保证怪活着；玩家死亡则外层 dead 优先
+    rounds = rep.get("rounds", 0)
+    if rounds >= flee_rounds:
+        io.say(f"{mon['name']}溜走了！紫装机会没了。"); return "fled"
+    if rounds >= flee_rounds - 1: io.say(f"{mon['name']}看起来要溜走了！")
+    return None
+
+def check_v30(cfg):
+    try: n = cfg.getint("rare_flee", "flee_rounds"); ok = n >= 2; detail = [] if ok else ["flee_rounds 必须 >= 2"]   # V30-01：至少留一个预警回合
+    except Exception: ok, detail = False, ["[rare_flee] flee_rounds 缺失或不是整数"]
+    return [("16 稀有逃跑回合合法（V30-01）", (ok, detail))]
