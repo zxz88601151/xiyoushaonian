@@ -196,7 +196,7 @@ if bad_lines:
     print("  超标:", bad_lines)
 r = subprocess.run([WB, "validate.py"], capture_output=True, text=True,
                    encoding="utf-8", env=ENV)
-check("validate 十二项全绿（V2.8 起含 V28-01/02/03）", r.returncode == 0 and r.stdout.count("✓") == 12)
+check("validate 十五项全绿（V2.9-A 起含 V29-01/02/03）（V2.8 起含 V28-01/02/03）", r.returncode == 0 and r.stdout.count("✓") == 15)
 r = subprocess.run([WB, "engine.py"], input="\n".join(["1"] * 500) + "\n",
                    capture_output=True, text=True, encoding="utf-8", env=ENV)
 after = json.load(open("save.json", encoding="utf-8"))

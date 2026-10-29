@@ -8,7 +8,7 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "lesson03"))
 import mypack
-import save
+import save; import encounter
 import gear
 import combat
 import loot
@@ -119,7 +119,7 @@ def run_game(io):
     state = save.load()
     week = base_playtime = maps_cleared = start = 0
     difficulty, tracker = None, None
-    gold_carry = protect_carry = tower_carry = 0; dmg_carry = 0
+    gold_carry = protect_carry = tower_carry = 0; dmg_carry = 0; pity_carry = 0
     storage = []
     if state and state.get("next", 0) >= total_fights():
         io.say(f"\n（检测到已通关的存档：第 {state.get('week', 0)} 周目已完结——开启第 {state.get('week', 0) + 1} 周目，从头再来！）")
@@ -129,7 +129,7 @@ def run_game(io):
                                state.get("quest_flags"), state.get("kills"))
         storage = state.get("storage", [])
         difficulty = loot.ask_difficulty(io)   # 新周目重问难度
-        gold_carry, protect_carry = state.get("gold", 0), state.get("protect", 0); dmg_carry = state.get("total_damage", 0)  # 金币/保底符/总伤害跨周目继承
+        gold_carry, protect_carry = state.get("gold", 0), state.get("protect", 0); dmg_carry = state.get("total_damage", 0); pity_carry = state.get("staff_pity", 0)  # 金币/保底符/总伤害/保底计数跨周目继承
         tower_carry = state.get("tower_best", 0)      # V2.5：爬塔最高层跨周目继承
         state = None        # 周目重开：等级回起点；任务/仓库/金币继承
     elif state:
@@ -147,14 +147,14 @@ def run_game(io):
                   "inventory": state.get("inventory", []),
                   "equipment": state.get("equipment") or gear.empty_equipment(),
                   "potions": state.get("potions") or {"hp": 0, "mp": 0},
-                  "tower_best": state.get("tower_best", 0), "tower_layer": state.get("tower_layer", 0), "total_damage": state.get("total_damage", 0)}
+                  "tower_best": state.get("tower_best", 0), "tower_layer": state.get("tower_layer", 0), "total_damage": state.get("total_damage", 0), "staff_pity": state.get("staff_pity", 0)}
         apply_gear(cfg, player)
         player["hp"] = min(player["hp"], player["max_hp"])
     if not state:
         player = {"level": cfg.getint("player", "level"), "exp": 0,
                   "mp": cfg.getint("player", "mp"), "gold": gold_carry, "protect": protect_carry,
                   "inventory": [], "equipment": gear.empty_equipment(),
-                  "potions": {"hp": 0, "mp": 0}, "tower_best": tower_carry, "tower_layer": 0, "total_damage": dmg_carry}
+                  "potions": {"hp": 0, "mp": 0}, "tower_best": tower_carry, "tower_layer": 0, "total_damage": dmg_carry, "staff_pity": pity_carry}
         tracker = tracker or qsys.Tracker(qsys.load(texts["quests.txt"]))
         apply_gear(cfg, player)
         player["hp"] = player["max_hp"]          # 新档满血进本
@@ -179,12 +179,12 @@ def run_game(io):
             if fi < start:
                 fi += 1
                 continue
-            result = battle(cfg, skills, f["mon"], player, io)
+            rep = {}; encounter.apply_encounter(f, week, m["no"], fi, cfg); result = battle(cfg, skills, f["mon"], player, io, rep)
             if result == "dead":
                 for q in tracker.on_event("lose", f["key"]):   # 败北事件（门禁 Bug B）
                     rewards.apply_rewards(cfg, player, io, [q], storage)
                 rewards.apply_death_penalty(player, io)
-                player["hp"] = player["max_hp"]   # V2.4：先扣 10% 经验，再满血拖回水帘洞疗伤
+                player["hp"] = player["max_hp"]; encounter.print_report(io, rep)   # V2.4：先扣 10% 经验，再满血拖回水帘洞疗伤；V2.9-A：败北也打印战报
                 persist(fi, maps_cleared)          # 落盘败局：跨局败北计数才可能累积
                 io.say("\n你倒下了……老猴把你拖回水帘洞疗伤。存档已更新，练练再来。")
                 return
@@ -198,7 +198,7 @@ def run_game(io):
             if result == "win":
                 for q in tracker.on_event("win", f["key"]):
                     rewards.apply_rewards(cfg, player, io, [q], storage)
-                loot.grant_win(cfg, f, player, storage, io, difficulty)
+                loot.grant_win(cfg, f, player, storage, io, difficulty); encounter.print_report(io, rep)
             fi += 1
             persist(fi, maps_cleared)
         for q in tracker.on_event("map", m["no"]):

@@ -9,7 +9,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 LUA = os.path.join(HERE, "..", "tools", "lua-5.1.5", "lua.exe")
 BATTLE_LUA = os.path.join(HERE, "scripts", "battle.lua")
 
-import skills as sk
+import encounter; import skills as sk
 
 
 def lua(*args):
@@ -65,14 +65,14 @@ def use_potion(cfg, player, io):
     return False
 
 
-def battle(cfg, skills, mon, player, io):
-    """skills = skills.load_skills() 技能表（V2.7）；契约不变：返回 win/dead/escaped。"""
+def battle(cfg, skills, mon, player, io, report=None):
+    """skills = skills.load_skills() 技能表（V2.7）；契约不变：返回 win/dead/escaped；report 填战报。"""
     name, m_hp, m_atk, m_exp = mon["name"], mon["hp"], mon["atk"], mon["exp"]
     io.say(f"\n═══ {name} 出现！「{mon['intro']}」")
-    cds, buff = sk.Cooldowns(), 0.0          # 战斗内 state：CD 表 + 筋斗云闪避 buff（仅下回合，D5 加法叠加）
+    cds, buff = sk.Cooldowns(), 0.0; phase = encounter.BossPhase(mon, cfg) if mon.get("key") == "boss" else None; rep = report if report is not None else {}; rep.update(rounds=0, dealt=0, taken=0, crits=0, misses=0)  # V2.9-A：boss 变招 + 战报（五项先归零）
     effect = sk.weapon_effect(player, mon)   # 武器谱 vs_tribe 特效倍率（无特效 1.0，整场固定）
     while m_hp > 0:
-        io.say(f"\n[{name} HP {m_hp}]  你 HP {player['hp']}/{player['max_hp']}  MP {player['mp']}"
+        phase.check(m_hp, io) if phase else None; io.say(f"\n[{name} HP {m_hp}]  你 HP {player['hp']}/{player['max_hp']}  MP {player['mp']}"
                f"  攻击力 {player['attack']}  防御 {player['def']:.1f}  闪避 {player.get('dodge', 0):.0f}%")
         act = io.ask("1 普攻 / 2 技能 / 3 逃跑 / 4 物品 > ").strip()
         power = hits = heal_pct = None
@@ -102,10 +102,10 @@ def battle(cfg, skills, mon, player, io):
             for _ in range(hits):              # 连击：每段独立命中判定；MISS 不触发暴击/吸血/连击后续段
                 # 命中率 = 95% + 命中 − 目标闪避，下限 60%（蓝图 §1.3，概率掷骰归引擎）
                 if random.randint(1, 100) > max(60, 95 + player.get("hit", 0) - mon.get("dodge", 0)):
-                    io.say("MISS！")
+                    io.say("MISS！"); rep["misses"] = rep.get("misses", 0) + 1
                     break
-                dmg, crit = roll_damage(player, power, effect)
-                m_hp -= dmg; player["total_damage"] = player.get("total_damage", 0) + dmg
+                dmg, crit = roll_damage(player, power, effect * (phase.vuln if phase else 1.0) * mon.get("dmg_mult", 1.0))
+                m_hp -= dmg; player["total_damage"] = player.get("total_damage", 0) + dmg; rep["dealt"] = rep.get("dealt", 0) + dmg; rep["crits"] = rep.get("crits", 0) + (1 if crit else 0)
                 io.say(f"你打出 {dmg} 点伤害{'，暴击！' if crit else ''}")
                 sk.leech_heal(player, dmg, io)
             if heal_pct:                       # 如意神通：倍率 5.0 之外回复 20% HP
@@ -113,15 +113,15 @@ def battle(cfg, skills, mon, player, io):
                 player["hp"] = min(player["max_hp"], player["hp"] + h)
                 io.say(f"  神通运转，回复 {h} 点血")
         if m_hp <= 0:
-            break
+            rep["rounds"] = rep.get("rounds", 0) + 1; break
         if random.randint(1, 100) <= player.get("dodge", 0) + buff:   # 怪物攻击：闪避判定（buff 加法叠加）
             io.say(f"你身形一晃，闪开了 {name} 的攻击！")
         else:
-            taken = lua("incoming", m_atk, f"{player['def']:.2f}", f"{player.get('mitigate', 1):.2f}")["dmg"]
-            player["hp"] -= taken
-            block = f"（防御格挡 {m_atk - taken}）" if taken < m_atk else ""
+            taken = lua("incoming", mon["atk"], f"{player['def']:.2f}", f"{player.get('mitigate', 1):.2f}")["dmg"]
+            player["hp"] -= taken; rep["taken"] = rep.get("taken", 0) + taken
+            block = f"（防御格挡 {mon['atk'] - taken}）" if taken < mon["atk"] else ""
             io.say(f"{name} 反击，你损失 {taken} 点血{block}")
-        buff = 0.0                       # 闪避 buff 仅下回合，回合结束清除
+        buff = 0.0; rep["rounds"] = rep.get("rounds", 0) + 1; phase.spike(player, io, rep) if phase else None  # 闪避 buff 仅下回合，回合结束清除；V2.9-A：回合计数 + 骨刺雨
         cds.tick()
         if player["hp"] <= 0:
             return "dead"

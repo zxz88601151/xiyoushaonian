@@ -7,7 +7,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "lesson03"))
 import mypack
 
-import combat, enhance, gear, loot, quests, save   # 校验器只读数据层，不碰引擎/GUI
+import combat, encounter, enhance, gear, loot, quests, save   # 校验器只读数据层，不碰引擎/GUI
 
 
 def load_cfg():
@@ -79,7 +79,7 @@ def check_migrate():
     d = save._migrate({"cleared": True, "level": 14, "exp": 0, "hp": 150,
                        "mp": 100, "attack": 57, "next": 0})
     need = ("schema", "week", "gold", "difficulty", "protect", "tower_best", "tower_layer", "inventory",
-            "equipment", "quest_flags", "storage", "achievements", "codex_weapons", "total_damage")
+            "equipment", "quest_flags", "storage", "achievements", "codex_weapons", "total_damage", "staff_pity")
     miss = [k for k in need if k not in d]
     return not miss and d["schema"] == save.SCHEMA and d["week"] == 1, miss
 
@@ -147,7 +147,7 @@ def main():
             ("6 存档 v1→v%d 迁移" % save.SCHEMA, check_migrate()),
             ("7 金币收支对账", check_gold_flow(cfg)),
             ("8 技能必有解锁等级（V27-01）", check_skills(cfg)),
-            ("9 特效 tribe 合法（V27-02）", check_weapon_tribes())] + check_v28(cfg)
+            ("9 特效 tribe 合法（V27-02）", check_weapon_tribes())] + check_v28(cfg) + encounter.check_v29(cfg)
     bad = sum(0 if ok else 1 for _, (ok, _) in rows)
     for name, (ok, detail) in rows:
         print(("✓" if ok else "✗"), name, ("" if ok else "  → %s" % detail))

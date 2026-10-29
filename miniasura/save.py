@@ -1,4 +1,4 @@
-# MiniAsura 存档外围 —— schema 8（V2.0 §3 + V2.1 §2 + V2.2 §3 + V2.3 金币/难度 + V2.4 强化/保底符 + V2.5 爬塔 + V2.8 图鉴/成就/统计）。
+# MiniAsura 存档外围 —— schema 9（V2.0 §3 + V2.1 §2 + V2.2 §3 + V2.3 金币/难度 + V2.4 强化/保底符 + V2.5 爬塔 + V2.8 图鉴/成就/统计 + V2.9-A 保底计数）。
 # 路径由登录链经 set_path() 注入；engine 只调 load/write，不认识账号。
 # CLI dev 模式（python engine.py）不注入 = 用默认路径，v1 行为保持。
 import json
@@ -10,7 +10,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PATH = os.path.join(HERE, "save.json")
 _USER = ""
 
-SCHEMA = 8
+SCHEMA = 9
 SLOT_KEYS = ("weapon", "helm", "armor", "belt", "boots")
 
 
@@ -32,7 +32,7 @@ def load():
 
 
 def _migrate(old):
-    # 迁移链：v1（cleared）→ v2（week/playtime）→ v3（背包/装备）→ v4（任务/图/药/仓库）→ v5（金币/难度）→ v6（强化/保底符）→ v7（爬塔）→ v8（图鉴/成就/统计）
+    # 迁移链：v1（cleared）→ v2（week/playtime）→ v3（背包/装备）→ v4（任务/图/药/仓库）→ v5（金币/难度）→ v6（强化/保底符）→ v7（爬塔）→ v8（图鉴/成就/统计）→ v9（保底计数）
     # 规则只补默认值不改已有数值——升档不许丢东西
     if "cleared" in old:
         old["week"] = 1 if old.pop("cleared") else 0
@@ -54,6 +54,7 @@ def _migrate(old):
     old.setdefault("achievements", [])     # V2.8：已解锁成就 id（并集永不回归）
     old.setdefault("codex_weapons", [])    # V2.8：曾经拥有过的武器名（卖出不灭灯）
     old.setdefault("total_damage", 0)      # V2.8：累计总伤害
+    old.setdefault("staff_pity", 0)        # V2.9-A：无级别保底计数（跨周目继承）
     for it in list(old.get("inventory", [])) + list(old.get("storage", [])):
         if isinstance(it, dict):
             it.setdefault("enh", 0)        # V2.4：旧装备补强化等级
@@ -105,6 +106,7 @@ def write(player, next_index, week, playtime, maps_cleared=0,
         "achievements": ach,
         "codex_weapons": codex,
         "total_damage": player.get("total_damage", 0),
+        "staff_pity": player.get("staff_pity", 0),
     })
 
 
