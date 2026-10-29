@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit,
                                QPushButton, QVBoxLayout, QWidget)
 
 import engine
+import skills
 
 AUTO = [x for x in os.environ.get("MINIASURA_AUTO", "").split(",") if x]
 SHOT = os.environ.get("MINIASURA_SHOT", "")
@@ -53,15 +54,15 @@ class BattleWidget(QWidget):
         self.act_row, self.act_btns = self.make_row(
             (("普攻(1)", "1"), ("技能(2)", "2"), ("逃跑(3)", "3"), ("物品(4)", "4")))
         try:
-            _texts = engine.load_texts()
-            _names = [v[0] for v in engine.parse_kv(_texts["skills.txt"]).values()]
+            # V2.7：技能按钮动态生成（全部主动技能，顺序与 skills.choose 菜单一致 = skills.txt 行序）
+            _acts = [s for s in skills.load_skills().values() if s["kind"] == "active"]
+            _names = [s["name"] for s in _acts]
         except Exception:
             _names = []
         while len(_names) < 3:
             _names.append("技能%d" % (len(_names) + 1))
         self.sk_row, self.sk_btns = self.make_row(
-            tuple(("%s(%d)" % (n, i + 1), str(i + 1))
-                  for i, n in enumerate(_names[:3])))
+            tuple(("%s(%d)" % (n, i + 1), str(i + 1)) for i, n in enumerate(_names)))
         # 对话 / 药水各给一排专按钮：之前这两类提示也亮着战斗按钮，
         # 点“普攻”会被对话当成“看完”、被药水当成“血瓶”，容易误触。
         self.dia_row, self.dia_btns = self.make_row(

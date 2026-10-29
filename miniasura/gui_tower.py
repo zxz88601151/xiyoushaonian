@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit,
 
 import engine
 import save
+import skills
 import tower
 
 
@@ -48,13 +49,15 @@ class TowerWindow(QWidget):
         self.act_row, self.act_btns = self.make_row(
             (("普攻(1)", "1"), ("技能(2)", "2"), ("逃跑(3)", "3"), ("物品(4)", "4")))
         try:
-            names = [v[0] for v in engine.parse_kv(engine.load_texts()["skills.txt"]).values()]
+            # V2.7：技能按钮动态生成（全部主动技能，顺序与 skills.choose 菜单一致）
+            acts = [s for s in skills.load_skills().values() if s["kind"] == "active"]
+            names = [s["name"] for s in acts]
         except Exception:
             names = []
         while len(names) < 3:
             names.append("技能%d" % (len(names) + 1))
         self.sk_row, self.sk_btns = self.make_row(
-            tuple(("%s(%d)" % (n, i + 1), str(i + 1)) for i, n in enumerate(names[:3])))
+            tuple(("%s(%d)" % (n, i + 1), str(i + 1)) for i, n in enumerate(names)))
         self.pot_row, self.pot_btns = self.make_row(
             (("血瓶(1)", "1"), ("蓝瓶(2)", "2"), ("取消", "x")))
         self.entry = QLineEdit()

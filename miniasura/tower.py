@@ -2,7 +2,7 @@
 # 只做调度与结算：CLI 与 GUI 共用 run_one；解锁=通关一次，死亡/撤离→本次清零、最高层保留。
 import configparser, os, random, sys
 
-import combat, engine, gear, loot, save   # engine 只用于 apply_gear/读资源，不反向依赖 tower
+import combat, engine, gear, loot, save, skills as sk   # engine 只用于 apply_gear/读资源，不反向依赖 tower
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -82,7 +82,7 @@ def main():
         sys.exit("还没有存档——先跑一次 engine.py 创建角色。")
     if not unlocked(state):
         sys.exit("无底洞尚未解锁：通关一次（第 1 周目完结）后才会出现入口。")
-    skills = engine.parse_kv(engine.load_texts()["skills.txt"])
+    skills = sk.load_skills()                # V2.7 技能表（combat 只消费）
     player, storage = load_player(cfg, state), state.get("storage", [])
     io.say("═══ 无底洞（历史最高 %d 层，本次从第 %d 层继续）═══" % (player["tower_best"], player["tower_layer"] + 1))
     try:

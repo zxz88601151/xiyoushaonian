@@ -1,0 +1,10 @@
+# MiniAsura V2.7 武器谱特效 —— 武器名|effect|参数（只紫档生效，蓝/白档 effect 为空；桃木棍无特效不进表）
+定水枪|vs_tribe:水族|1.15
+齐眉棍|hp_pct|0.05
+降魔杖|vs_tribe:妖|1.12
+白骨剑|critdmg|0.15
+缠丝爪|leech|0.03
+芭蕉扇|vs_tribe:火抗|1.18
+混妖斧|atk_pct|0.06
+乾坤圈|def_pct|0.08
+弥陀弓|hit|0.10

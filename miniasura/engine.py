@@ -16,6 +16,7 @@ import rewards
 from combat import battle, grant_exp, roll_damage, lua   # 再导出：外部依赖 engine.grant_exp
 import dialogue as dlg
 import quests as qsys
+import skills as skills_mod
 
 ASSETS = ("intro.txt", "skills.txt", "monsters.txt",
           "dialogue.txt", "quests.txt", "maps.txt")
@@ -37,9 +38,9 @@ def load_texts():
 def parse_kv(text):
     table = {}
     for line in text.splitlines():
-        if line.strip():
-            key, name, desc = line.split("|")
-            table[key] = (name, desc)
+        if line.strip() and not line.startswith("#"):   # monsters.txt V2.7 起有注释行
+            parts = line.split("|")
+            table[parts[0]] = tuple(parts[1:])          # 列数不限：skills 2 列 / monsters 3 列（名/intro/tribe）
     return table
 
 
@@ -49,18 +50,18 @@ def player_attack(cfg, level):
 
 
 def apply_gear(cfg, player):
-    # 装备加成只消费 gear.totals 的聚合结果（公式住 equip.lua）；V2.5 起 totals 要吃持有者等级——
-    # 无级别武器（scaling:"owner"）按持有者等级重算攻击，这是架构上唯一的有意破例
+    # 装备加成只消费 gear.totals 的聚合结果（公式住 equip.lua）；V2.5 起 totals 要吃持有者等级
     tot = gear.totals(player.get("equipment") or gear.empty_equipment(), player["level"])
-    player["attack"] = player_attack(cfg, player["level"]) + round(tot["atk"])
-    player["max_hp"] = (cfg.getint("player", "hp")
-                        + (player["level"] - 1) * cfg.getint("growth", "hp_per_level")
-                        + round(tot["hp"]))
-    player["def"] = tot["def"]
-    player["crit_rate"] = min(100, cfg.getint("player", "crit_rate") + tot["crit"])
-    player["critdmg"] = tot["critdmg"] / 100
-    player["leech"] = tot["leech"] / 100
-    player["exp_bonus"] = tot["exp"] / 100
+    pas = skills_mod.passive_totals(skills_mod.load_skills(), player["level"], tot)   # V2.7 被动唯一汇总处
+    player["attack"] = round((player_attack(cfg, player["level"]) + tot["atk"]) * pas["atk_mult"])
+    player["max_hp"] = round(cfg.getint("player", "hp") + (player["level"] - 1)
+                             * cfg.getint("growth", "hp_per_level") + tot["hp"])
+    player["def"], player["dodge"] = tot["def"], tot["dodge"]   # V2.7 闪避（靴子+词条+筋斗云 buff）
+    player["hit"] = tot.get("hit", 0.0)                         # V2.7 命中（弥陀弓）
+    player["mitigate"] = pas["mitigate"]                        # V2.7 不坏金身减伤
+    player["crit_rate"] = min(100, cfg.getint("player", "crit_rate") + tot["crit"] + pas["crit"])
+    player["critdmg"], player["leech"], player["exp_bonus"] = (tot["critdmg"] / 100,
+                                                               tot["leech"] / 100, tot["exp"] / 100)
 
 
 def build_maps(text, cfg, monsters, difficulty=0):
@@ -78,6 +79,7 @@ def build_maps(text, cfg, monsters, difficulty=0):
             fights.append({"key": key, "mon": {
                 # key 必须放进 mon：battle 靠 mon["key"]=="boss" 判定逃跑必失败（V2.4 补丁）
                 "key": key, "name": monsters[key][0], "intro": monsters[key][1],
+                "tribe": monsters[key][2] if len(monsters[key]) > 2 else "无",   # V2.7 vs_tribe 特效匹配
                 "hp": round(int(base["hp"]) * scale * stat_mult),
                 "atk": round(int(base["attack"]) * scale * stat_mult),
                 "exp": round(int(base["exp"]) * scale * reward_mult),
@@ -90,8 +92,8 @@ def total_fights():
     cfg = configparser.ConfigParser()
     cfg.read(os.path.join(HERE, "game.ini"), encoding="utf-8")
     texts = load_texts()
-    maps = build_maps(texts["maps.txt"], cfg, parse_kv(texts["monsters.txt"]))
-    return sum(len(m["fights"]) for m in maps)
+    return sum(len(m["fights"]) for m in build_maps(
+        texts["maps.txt"], cfg, parse_kv(texts["monsters.txt"])))
 
 
 def finish_summary(io, player, tracker, cleared, total, week, monsters, difficulty):
@@ -109,18 +111,16 @@ def run_game(io):
     cfg = configparser.ConfigParser()
     cfg.read(os.path.join(HERE, "game.ini"), encoding="utf-8")
     texts = load_texts()
-    skills = parse_kv(texts["skills.txt"])
+    skills = skills_mod.load_skills()      # V2.7：技能表（名+数值合并），combat 只消费
     monsters = parse_kv(texts["monsters.txt"])
-    maps = build_maps(texts["maps.txt"], cfg, monsters)
     dialogues = dlg.load(texts["dialogue.txt"])
     io.say(texts["intro.txt"])
 
     state = save.load()
     week = base_playtime = maps_cleared = start = 0
-    difficulty = None
+    difficulty, tracker = None, None
     gold_carry = protect_carry = tower_carry = 0
     storage = []
-    tracker = None
     if state and state.get("next", 0) >= total_fights():
         io.say(f"\n（检测到已通关的存档：第 {state.get('week', 0)} 周目已完结——开启第 {state.get('week', 0) + 1} 周目，从头再来！）")
         week = state.get("week", 0)

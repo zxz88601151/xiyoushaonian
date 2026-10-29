@@ -19,6 +19,21 @@ SLOT_NAMES = {"weapon": "武器", "helm": "头盔", "armor": "护甲",
               "belt": "腰带", "boots": "靴子"}
 QUALITY_NAMES = ["白", "蓝", "紫"]
 AFFIX_COUNT = (0, 1, 2)          # 白/蓝/紫词条数（蓝本 §2.1）
+# V2.7 武器谱（蓝图 §2.4 十把；紫档武器生成时取名并挂特效，桃木棍无特效）
+WEAPON_NAMES = ["桃木棍", "定水枪", "齐眉棍", "降魔杖", "白骨剑",
+                "缠丝爪", "芭蕉扇", "混妖斧", "乾坤圈", "弥陀弓"]
+
+
+def load_weapon_effects():
+    """weapon_effects.txt（武器|effect|参数）→ {武器名: (effect, 参数)}，数据外置。"""
+    text = mypack.read(os.path.join(HERE, "assets.mpak"), "weapon_effects.txt").decode("utf-8")
+    table = {}
+    for line in text.splitlines():
+        if not line.strip() or line.startswith("#"):
+            continue
+        name, effect, param = line.split("|")
+        table[name] = (effect, param)
+    return table
 
 
 def capacity():
@@ -84,6 +99,11 @@ def generate(slot, lv, quality, rows=None, rng=random):
         r = rng.randint(0, 10000)                # 掷骰归引擎侧，公式归 Lua
         v = lua("affix", kind, lv, r, a["lo"], a["hi"], mid)["val"]
         item["affixes"].append({"key": a["key"], "name": a["name"], "val": v})
+    if q == 2 and slot == "weapon":              # V2.7 紫档武器：武器谱取名 + 特效（蓝/白档为空）
+        item["name"] = rng.choice(WEAPON_NAMES)
+        eff = load_weapon_effects().get(item["name"])
+        if eff:
+            item["effect"] = {"kind": eff[0], "param": eff[1]}
     return item
 
 
@@ -126,7 +146,10 @@ def grant_staff(player, storage, io):
 def item_name(item):
     if item.get("scaling") == "owner":
         return STAFF_NAME + (f" +{item['enh']}" if item.get("enh") else "")
-    name = f"{QUALITY_NAMES[item['quality']]}·{SLOT_NAMES[SLOTS[item['slot']]]} Lv{item['lv']}"
+    if item.get("name"):                          # V2.7 武器谱紫武有专名（旧档无 name 走原格式）
+        name = f"{QUALITY_NAMES[item['quality']]}·{item['name']} Lv{item['lv']}"
+    else:
+        name = f"{QUALITY_NAMES[item['quality']]}·{SLOT_NAMES[SLOTS[item['slot']]]} Lv{item['lv']}"
     if item.get("enh", 0):
         name += f" +{item['enh']}"
     return name
@@ -156,6 +179,7 @@ def totals(equipment, owner_level=1):
     base = {"atk": 0.0, "hp": 0.0, "def": 0.0, "dodge": 0.0}
     pct = {"atk": 0.0, "hp": 0.0}
     add = {"crit": 0.0, "critdmg": 0.0, "leech": 0.0, "exp": 0.0}
+    mult_pct, hit = {"atk": 1.0, "hp": 1.0, "def": 1.0}, 0.0   # V2.7 武器谱特效汇总（乘区/命中）
     for it in equipment.values():
         if not it:
             continue
@@ -178,9 +202,24 @@ def totals(equipment, owner_level=1):
             else:
                 raise ValueError(f"未知词条 key: {a['key']}"
                                  f"（affixes.txt 与 totals 白名单不对齐）")
+        eff = it.get("effect") or {}          # V2.7 武器谱特效：vs_tribe 由 combat 按 tribe 匹配
+        kind, param = eff.get("kind", ""), float(eff.get("param", 0) or 0)
+        if kind.startswith("vs_tribe:"):
+            pass                              # 战斗内倍率，不进面板汇总
+        elif kind in ("atk_pct", "hp_pct", "def_pct"):
+            mult_pct[kind.split("_")[0]] *= 1 + param
+        elif kind == "hit":
+            hit += param
+        elif kind in ("leech", "critdmg"):
+            add[kind] += param * 100
+        elif kind:
+            raise ValueError(f"未知武器特效 kind: {kind}（weapon_effects.txt 白名单不对齐）")
     for k in ("atk", "hp"):
         base[k] *= 1 + pct[k] / 100
-    return {**base, **add}
+    for k in mult_pct:                        # 武器谱百分比特效乘区（在词条%之后）
+        base[k] *= mult_pct[k]
+    add["leech"] = min(10.0, add["leech"])    # D3：吸血叠加上限 10%（词条+缠丝爪收口处）
+    return {**base, **add, "hit": hit}
 
 
 def empty_equipment():

@@ -81,7 +81,7 @@ combat.grant_exp(CFG, p, io, 999999)
 check("30 级封顶：999999 经验也只到 30", p["level"] == 30)
 
 # ── 门禁3 纯普攻全通：CLI 400×「1」不死通关，Lv.25 / 金币 798 / h2 done ──
-r = subprocess.run([WB, "engine.py"], input="\n".join(["1"] * 400) + "\n",
+r = subprocess.run([WB, "engine.py"], input="\n".join(["1"] * 500) + "\n",
                    capture_output=True, text=True, encoding="utf-8", env=ENV)
 after = json.load(open("save.json", encoding="utf-8"))
 check("CLI 全通：不死通关（无「你倒下了」）、地图 10/10",
@@ -119,7 +119,7 @@ if "失败" in r.stdout:
     print(r.stdout[-800:])
 r = subprocess.run([WB, "validate.py"], capture_output=True, text=True,
                    encoding="utf-8", env=ENV)
-check("validate.py 七项全绿", r.returncode == 0 and r.stdout.count("✓") == 7)
+check("validate.py 九项全绿（V2.7 起含 V27-01/02）", r.returncode == 0 and r.stdout.count("✓") == 9)
 
 # ── 门禁6 行数纪律 ──
 limits = {"engine.py": 220, "tower.py": 100, "combat.py": 130,

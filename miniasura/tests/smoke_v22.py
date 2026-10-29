@@ -88,7 +88,7 @@ check("跳过对话：击杀型 s1 照常 done", flags.get("s1") == "done")
 os.remove("save.json")
 
 # ── 门禁3 主门禁：CLI 全通十任务（9 链任务 done；h1 需败北另行验证）──
-r = subprocess.run([WB, "engine.py"], input="\n".join(["1"] * 400) + "\n",
+r = subprocess.run([WB, "engine.py"], input="\n".join(["1"] * 500) + "\n",
                    capture_output=True, text=True, encoding="utf-8", env=ENV)
 # V2.5 基线重定：新增隐藏任务 h2（通关第 10 图必得无级武器）→ 任务总数 11、全通 done 10 个
 check("CLI 全通：10 任务 done + 地图 10/10",

@@ -129,14 +129,16 @@ crit_item = {"slot": 0, "lv": 14, "quality": 1,             # 蓝装武器
 p = {"level": 14, "exp": 0, "hp": 150, "mp": 100,
      "inventory": [], "equipment": dict(gear.empty_equipment(), weapon=crit_item)}
 engine.apply_gear(cfg, p)
-check("★主门禁：穿暴击+5%蓝装 → 面板 20%→25% 零代码生效",
-      p["crit_rate"] == 25 and p["attack"] == 57 + 30)
+# V2.7 基线重定：Lv.14 解锁被动火眼金睛（暴击 +8%）→ 面板 20+5+8=33；零代码生效语义不变
+check("★主门禁：穿暴击+5%蓝装 → 面板 20%→33%（含被动火眼金睛 +8%）零代码生效",
+      p["crit_rate"] == 33 and p["attack"] == 57 + 30)
 
 io_stub = type("S", (), {"say": lambda self, *a: None})()
 # V2.6 曲线（60×lv^1.65）下 Lv.14→15 需 4668 经验，给 5000 保证升级——判据语义不变：升级后装备加成不丢
 engine.grant_exp(cfg, p, io_stub, 5000)                     # 升到 15
+# V2.7 基线重定：Lv.15 解锁被动火眼金睛（暴击 +8%）→ crit_rate 25+8=33；判据语义（升级重算不丢装备）不变
 check("★F1 回归：升级重算 apply_gear，装备攻击不丢",
-      p["level"] == 15 and p["attack"] == 60 + 30 and p["crit_rate"] == 25)
+      p["level"] == 15 and p["attack"] == 60 + 30 and p["crit_rate"] == 33)
 
 for bad_args, name in ((("weapon", 10, 3), "品质越界"), (("ring", 10, 1), "未知部位")):
     try:
@@ -185,7 +187,7 @@ r = subprocess.run([WB, "tests/smoke_v20.py"], capture_output=True, text=True,
                    encoding="utf-8", env=ENV)
 check("V2.0 冒烟回归 18/18", "全部通过" in r.stdout)
 
-r = subprocess.run([WB, "engine.py"], input="\n".join(["1"] * 400) + "\n",
+r = subprocess.run([WB, "engine.py"], input="\n".join(["1"] * 500) + "\n",
                    capture_output=True, text=True, encoding="utf-8", env=ENV)
 check("CLI 管道完整通关", "通关结算" in r.stdout)
 if os.path.exists("save.json"):

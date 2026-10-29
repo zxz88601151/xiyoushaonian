@@ -80,7 +80,8 @@ check("item_name/item_line 认无级标记",
 p30 = new_player(30)
 p30["equipment"]["weapon"] = gear.make_staff()
 engine.apply_gear(CFG, p30)
-check("apply_gear 与 totals 同源（面板=实战，等级入参）", p30["attack"] == 105 + 190)
+# V2.7 基线重定：Lv.30 解锁被动斗战之心（攻击 ×1.10）→ attack = round((105+190)×1.10) = 324
+check("apply_gear 与 totals 同源（面板=实战，等级入参，含被动 ×1.10）", p30["attack"] == 324)
 
 # ── 门禁2 获取双轨：隐藏任务必得 + boss 1% 掉率，共用同一个发放口 ──
 T = quests.Tracker(quests.load(quests.load_pack_text()))
@@ -150,7 +151,7 @@ check("经验曲线严格单调递增", all(b > a for a, b in zip(needs, needs[1
 # ── 门禁6 validate.py 七项全绿（OD-V25-04：纳入门禁，全绿才算出期）──
 r = subprocess.run([WB, "validate.py"], capture_output=True, text=True,
                    encoding="utf-8", env=ENV)
-check("validate.py 七项全绿", r.returncode == 0 and r.stdout.count("✓") == 7)
+check("validate.py 九项全绿（V2.7 起含 V27-01/02）", r.returncode == 0 and r.stdout.count("✓") == 9)
 
 # ── 门禁7 GM tower/staff 命令（数字走 _int fail-closed）──
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -211,7 +212,7 @@ bad_lines = [f"{f}={sum(1 for _ in open(f, encoding='utf-8'))}"
 check("行数纪律（engine≤220、tower≤100、validate≤150、gui_tower≤200）", not bad_lines)
 if bad_lines:
     print("  超标:", bad_lines)
-r = subprocess.run([WB, "engine.py"], input="\n".join(["1"] * 400) + "\n",
+r = subprocess.run([WB, "engine.py"], input="\n".join(["1"] * 500) + "\n",
                    capture_output=True, text=True, encoding="utf-8", env=ENV)
 after = json.load(open("save.json", encoding="utf-8"))
 # V2.6 基线重定：Lv.1 开局 + 曲线恢复 60×lv^1.65 → 全通 Lv.25；图10 倍率 1.0 → 金币 798
