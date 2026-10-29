@@ -187,7 +187,7 @@ check("吸血叠加上限 10%（缠丝爪 3% + 双满值词条 10% → 封顶）
       gear.totals(p["equipment"], 30)["leech"] == 10)
 
 # ── 门禁6 回归：CLI 全通 + smoke_v26 + validate 九项 + 行数纪律 ──
-limits = {"engine.py": 220, "combat.py": 130, "skills.py": 150, "validate.py": 150}
+limits = {"engine.py": 220, "combat.py": 130, "skills.py": 150, "validate.py": 160}
 bad_lines = [f"{f}={sum(1 for _ in open(f, encoding='utf-8'))}"
              for f, lim in limits.items()
              if sum(1 for _ in open(f, encoding="utf-8")) > lim]
@@ -196,7 +196,7 @@ if bad_lines:
     print("  超标:", bad_lines)
 r = subprocess.run([WB, "validate.py"], capture_output=True, text=True,
                    encoding="utf-8", env=ENV)
-check("validate.py 九项全绿（含 V27-01/02）", r.returncode == 0 and r.stdout.count("✓") == 9)
+check("validate 十二项全绿（V2.8 起含 V28-01/02/03）", r.returncode == 0 and r.stdout.count("✓") == 12)
 r = subprocess.run([WB, "engine.py"], input="\n".join(["1"] * 500) + "\n",
                    capture_output=True, text=True, encoding="utf-8", env=ENV)
 after = json.load(open("save.json", encoding="utf-8"))

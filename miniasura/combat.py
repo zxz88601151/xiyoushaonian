@@ -105,7 +105,7 @@ def battle(cfg, skills, mon, player, io):
                     io.say("MISS！")
                     break
                 dmg, crit = roll_damage(player, power, effect)
-                m_hp -= dmg
+                m_hp -= dmg; player["total_damage"] = player.get("total_damage", 0) + dmg
                 io.say(f"你打出 {dmg} 点伤害{'，暴击！' if crit else ''}")
                 sk.leech_heal(player, dmg, io)
             if heal_pct:                       # 如意神通：倍率 5.0 之外回复 20% HP

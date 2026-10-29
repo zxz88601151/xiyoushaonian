@@ -33,7 +33,7 @@
 ├── lesson03/        ← mypack.py（被 miniasura 复用）
 ├── lesson04/  lesson05/
 ├── tools/           ← lua-5.1.5（自编译解释器）
-└── miniasura/       ← 按斗战神图纸复刻的文字版游戏（V2.7）
+└── miniasura/       ← 按斗战神图纸复刻的文字版游戏（V2.8）
 ```
 
 ## 进度记录
@@ -76,6 +76,7 @@
 | 2026-10-29 | **V2.5 毕业**（DESIGN_V2_5.md 冻结，四项业主决议：双轨获取/本期不做Lv.1开局/通关后解锁爬塔/validate入门禁）：无底洞爬塔 tower.py（层数即怪物等级，通关一次后解锁，死亡/撤离清零、最高层保留，续爬+EOF中断保护）+ 无级别武器「如意金箍棒·无级」（ATK=10+等级×6，scaling:"owner" 每次 apply_gear 重算，固定三词条满值，吃强化倍率；双轨：隐藏任务 h2「真假美猴王」通关必得 + boss 1% 掉率，共用同一发放口且幂等）+ 数值平衡（30 级封顶、经验曲线 100×级数^1.65 住 battle.lua，CLI 全通自然等级 Lv.32→Lv.17 显式重定基线）+ validate.py 七项数据校验（掉落/任务奖励/曲线单调/商店/词条限制/v1→v7 迁移/金币对账）+ gui_tower 爬塔窗 + schema 7（tower_best/tower_layer）+ gm tower/staff；smoke_v25 七门禁全绿 + v22/v23/v24 全链回归绿（含 v25 幂等双跑）。engine.py 仍 220 行顶格达标（结算块抽 finish_summary 腾位） | ✅ V2.5 毕业 |
 | 2026-10-29 | **V2.6 毕业**（DESIGN_V2_6.md 冻结）：**Lv.1 开局**（蓝图 §1 终落地）+ 经验曲线恢复蓝图原值 60×lv^1.65（V2.5 的 100 基数是 Lv.14 开局临时对齐，本期被原值取代）+ 十图数值重钉（怪物 exp 800/2000/4000/55000 按通关 ~Lv.25 校准；boss 加强 220/20→600/40；图10 倍率 1.6→1.0）+ 两个实测倒逼的行为决策：**升级回满血**（否则十图磨血 226 点必死于终幕）与**任务奖励品质更高自动换装**（否则武器堵在首件白装，终幕战力不足）+ 任务奖励装备等级下调（15~18→2/5/8/12 随 Lv.1 进度）+ 爬塔经验改曲线 30×N^1.65（Lv.25 满配爬 30 层恰好顶到 30 级封顶，闭环验证）。基线显式重定：CLI 全通等级 17→25、金币 918→798（boss scale 1.0 所致），smoke_v21 升级判据改 grant 5000（语义不变），蓝图曲线表 16715 与公式 16419 不符处以公式为权威。smoke_v26 六门禁全绿 + v21→v25 全链回归绿 | ✅ V2.6 毕业 |
 | 2026-10-29 | **V2.7 毕业**（PATCH-V27 补丁稿转正冻结为 DESIGN_V27.md，D1–D5 默认值全部采纳）：十技能补齐（主动 6 + 被动 3，解锁档 3/6/10/14/18/22/26/29/30 对齐蓝图表；技能菜单灰字显示 Lv.解锁/冷却中/MP 不足）+ 战斗 CD 表（棒扫六合 3 回合 / 如意神通 5，出战斗清零）+ 命中/闪避（蓝图 §1.3 公式：95%+命中−闪避下限 60%，MISS 不触发暴击/吸血/连击后续段，筋斗云 buff 仅下回合加法叠加）+ 武器谱特效（紫档武器取名挂 effect：定水枪 ×1.15 打水族 / 降魔杖 ×1.12 打妖 / 白骨剑暴伤 +15 / 缠丝爪吸血 +3% 与词条合计上限 10%）+ battle.lua damage/incoming 加可选参数（缺省=旧行为）+ monsters.txt 加 tribe 列 + validate 加 V27-01/02 九项。实现期修 3 真 bug：被动暴击重复计数词条、闪避 buff 单位错位（0.30 小数 vs 30 百分数）、连击 MISS 用 continue 未中断。基线显式重定：smoke_v21 crit 25→33（火眼金睛 +8）、smoke_v25 面板 ×1.10、CLI 全通输入 400→500（MISS 拉长战斗）。skills.py 141 行 / validate.py 150 行 / combat.py 129 行 / engine.py 220 行全部顶格达标；smoke_v27 六门禁全绿 + v21→v26 全链回归绿（v27 幂等双跑） | ✅ V2.7 毕业 |
+| 2026-10-29 | **V2.8 毕业**（DESIGN_V2_8.md 施工版冻结，Kit 两处裁决：一窗四页 / 同档替换）：图鉴·成就·统计一窗四页（武器谱 10 把 ●/○+计数、怪物图鉴 7 行 ×击杀数、成就 6 项、统计 7 项含时长格式化）+ progress.py（成就判定纯函数 evaluate / 图鉴并集 merge_codex / 统计口径唯一汇总处）+ schema 8（achievements/codex_weapons/total_damage，v7→v8 旧值一字不动）+ total_damage 伤害累计（combat 同行追加、跨周目 dmg_carry 继承）+ tribe 实怪补齐（虾兵/蟹将=水族上图4、火妖=火抗上图7，数值同档替换使 V2.6 全通基线零位移）+ validate 加 V28-01/02/03 成十二项（**上限显式修订 150→160**）。成就永不回归：save.write 与 tower.persist 均取「旧档 ∪ 本次」并集。smoke_v28 六门禁全绿 + v21→v27 全链回归绿 | ✅ V2.8 毕业 |
 
 ## 环境（搬迁后需注意）
 | 项 | 值 |
@@ -91,7 +92,7 @@
 cd /d D:/西游记文字版/miniasura
 D:/Software/Python313/python.exe app.py     :: GUI 全链路
 python engine.py                            :: CLI 文字版
-D:/Software/Python313/python.exe tests\smoke_v27.py   :: 全套门禁（v21→…→v27 回归链，可重复执行）
-D:/Software/Python313/python.exe validate.py          :: V2.5 数据校验器（七项数据表编译检查）
+D:/Software/Python313/python.exe tests\smoke_v28.py   :: 全套门禁（v21→…→v28 回归链，可重复执行）
+D:/Software/Python313/python.exe validate.py          :: 数据校验器（十二项：七项数据表 + V27-01/02 技能/特效 + V28-01/02/03 成就/新怪/地图，上限 160）
 python tower.py                                       :: V2.5 无底洞爬塔 CLI（通关一次后解锁）
 ```

@@ -1,0 +1,9 @@
+# MiniAsura V2.8 成就表 —— id|名称|描述|条件类型|阈值（DESIGN_V2_8 §2 正式定义）
+# 条件类型（validate V28-01 合法集）：kills 总击杀 / maps 通图数（week≥1 兜底）/
+# level 等级 / arsenal 武器谱收集数 / tower 爬塔最高层 / enhance 单件最高强化等级
+first_blood|初露锋芒|累计击杀 1 只妖怪|kills|1
+clear_all|西行功成|通关全部十图|maps|10
+max_level|齐天大圣|修到 Lv.30 封顶|level|30
+full_arsenal|武器谱集齐|集齐武器谱全部 10 把|arsenal|10
+tower30|无底洞三十层|无底洞爬到第 30 层|tower|30
+enhance10|登峰造极|把一件装备强化到 +10|enhance|10

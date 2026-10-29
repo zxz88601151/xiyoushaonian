@@ -51,21 +51,19 @@ def check_exp_curve(cfg):
     """3 经验曲线严格单调递增（调 battle.lua expneed，公式不在 Python 里重写一遍）。"""
     g = cfg["growth"]
     base, pow100 = g.getint("exp_base"), g.getint("exp_pow_x100")
-    needs = [combat.lua("expneed", i, base, pow100)["need"]
-             for i in range(1, g.getint("level_cap"))]
+    needs = [combat.lua("expneed", i, base, pow100)["need"] for i in range(1, g.getint("level_cap"))]
     ok = all(b > a for a, b in zip(needs, needs[1:])) and needs[0] > 0
     return ok, [] if ok else ["非单调：%s" % needs[:5]]
 
 
+def data_rows(name):
+    """数据表逐行（跳过空行与注释）——多处校验共用的唯一读法。"""
+    return [l for l in pack_text(name).splitlines() if l.strip() and not l.startswith("#")]
+
+
 def check_shop():
     """4 商店每件物品可购买：价格 > 0。"""
-    bad = []
-    for line in pack_text("shop.txt").splitlines():
-        if not line.strip() or line.startswith("#"):
-            continue
-        key, name, price = line.split("|")
-        if int(price) <= 0:
-            bad.append("%s 价格 %s" % (key, price))
+    bad = [l.split("|")[0] for l in data_rows("shop.txt") if int(l.split("|")[2]) <= 0]
     return not bad, bad
 
 
@@ -80,8 +78,8 @@ def check_migrate():
     """6 存档 schema 可迁移：v1 档 → 当前 schema，关键字段一个都不丢。"""
     d = save._migrate({"cleared": True, "level": 14, "exp": 0, "hp": 150,
                        "mp": 100, "attack": 57, "next": 0})
-    need = ("schema", "week", "gold", "difficulty", "protect", "tower_best", "tower_layer",
-            "inventory", "equipment", "quest_flags", "storage")
+    need = ("schema", "week", "gold", "difficulty", "protect", "tower_best", "tower_layer", "inventory",
+            "equipment", "quest_flags", "storage", "achievements", "codex_weapons", "total_damage")
     miss = [k for k in need if k not in d]
     return not miss and d["schema"] == save.SCHEMA and d["week"] == 1, miss
 
@@ -98,9 +96,7 @@ def check_gold_flow(cfg):
 def check_skills(cfg):
     # V27-01 skills.txt 每行 id 必有 [skill.*]+unlock_lv；主动必有 power，被动不得有 power
     bad = []
-    for line in pack_text("skills.txt").splitlines():
-        if not line.strip() or line.startswith("#"):
-            continue
+    for line in data_rows("skills.txt"):
         sid = line.split("|")[0]
         sec = "skill." + sid
         if not cfg.has_section(sec) or "unlock_lv" not in cfg[sec]:
@@ -115,16 +111,30 @@ def check_skills(cfg):
 
 
 def check_weapon_tribes():
-    # V27-02 vs_tribe:X 的 X 必属 D2 合法 tribe 集合（防拼写；水族/火抗实体怪待 V2.8 地图扩展）
+    # V27-02 vs_tribe:X 的 X 必属 D2 合法 tribe 集合（防拼写；V2.8 水族/火抗实怪已补）
     tribes = {"无", "妖", "水族", "火抗"}   # D2 全集
-    bad = []
-    for line in pack_text("weapon_effects.txt").splitlines():
-        if not line.strip() or line.startswith("#"):
-            continue
-        _, effect, _ = line.split("|")
-        if effect.startswith("vs_tribe:") and effect.split(":", 1)[1] not in tribes:
-            bad.append(effect)
+    bad = [l.split("|")[1] for l in data_rows("weapon_effects.txt")
+           if l.split("|")[1].startswith("vs_tribe:")
+           and l.split("|")[1].split(":", 1)[1] not in tribes]
     return not bad, bad
+
+
+def check_v28(cfg):
+    """V28-01 成就条件合法 / V28-02 新怪三件套 / V28-03 地图 key 存在 + 武器谱口径一致。"""
+    ach, keys = data_rows("achievements.txt"), {l.split("|")[0] for l in data_rows("monsters.txt")}
+    legal = {"kills", "maps", "level", "arsenal", "tower", "enhance"}
+    bad1 = [l for l in ach if len(l.split("|")) != 5 or l.split("|")[3] not in legal
+            or int(l.split("|")[4]) <= 0]
+    bad2 = [k for k in ("xiabing", "xiejian", "huoyao") if not cfg.has_section("monster." + k)
+            or not cfg.has_section("loot." + k) or k not in keys]
+    bad3 = [l for l in data_rows("maps.txt")
+            if any(k != "-" and k not in keys for k in l.split("|")[2].split(","))]
+    th = [int(l.split("|")[4]) for l in ach if l.split("|")[3] == "arsenal"]
+    if len(gear.WEAPON_NAMES) != 10 or th[:1] != [10]:
+        bad3.append("武器谱 %d / 阈值 %s" % (len(gear.WEAPON_NAMES), th))
+    return [("10 成就条件合法（V28-01）", (not bad1, bad1)),
+            ("11 新怪三件套齐全（V28-02）", (not bad2, bad2)),
+            ("12 地图 key 与武器谱口径（V28-03）", (not bad3, bad3))]
 
 
 def main():
@@ -137,7 +147,7 @@ def main():
             ("6 存档 v1→v%d 迁移" % save.SCHEMA, check_migrate()),
             ("7 金币收支对账", check_gold_flow(cfg)),
             ("8 技能必有解锁等级（V27-01）", check_skills(cfg)),
-            ("9 特效 tribe 合法（V27-02）", check_weapon_tribes())]
+            ("9 特效 tribe 合法（V27-02）", check_weapon_tribes())] + check_v28(cfg)
     bad = sum(0 if ok else 1 for _, (ok, _) in rows)
     for name, (ok, detail) in rows:
         print(("✓" if ok else "✗"), name, ("" if ok else "  → %s" % detail))

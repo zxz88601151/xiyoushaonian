@@ -2,7 +2,7 @@
 # 只做调度与结算：CLI 与 GUI 共用 run_one；解锁=通关一次，死亡/撤离→本次清零、最高层保留。
 import configparser, os, random, sys
 
-import combat, engine, gear, loot, save, skills as sk   # engine 只用于 apply_gear/读资源，不反向依赖 tower
+import combat, engine, gear, loot, progress, save, skills as sk   # engine 只用于 apply_gear/读资源，不反向依赖
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -38,7 +38,7 @@ def load_player(cfg, state):
               "equipment": state.get("equipment") or gear.empty_equipment(),
               "potions": state.get("potions") or {"hp": 0, "mp": 0},
               "tower_best": state.get("tower_best", 0),
-              "tower_layer": state.get("tower_layer", 0)}
+              "tower_layer": state.get("tower_layer", 0), "total_damage": state.get("total_damage", 0)}
     engine.apply_gear(cfg, player)
     player["hp"] = min(player["hp"] or player["max_hp"], player["max_hp"])
     return player
@@ -65,12 +65,12 @@ def run_one(cfg, skills, player, storage, io, rng=random):
     return "win"
 
 
-def persist(state, player, storage):
-    # 写回存档：只动玩家字段与仓库，任务/图进度原样带回（不经引擎主循环）
-    for k in ("level", "exp", "hp", "mp", "gold", "inventory", "equipment", "potions",
-              "tower_best", "tower_layer"):
+def persist(state, player, storage):   # 只动玩家字段与仓库，任务/图进度原样带回（不经引擎主循环）
+    for k in ("level", "exp", "hp", "mp", "gold", "inventory", "equipment", "potions", "tower_best", "tower_layer", "total_damage"):
         state[k] = player[k]
-    state["storage"] = storage
+    state["storage"] = storage; state["codex_weapons"] = progress.merge_codex(
+        state.get("codex_weapons", []), player, storage)
+    state["achievements"] = sorted(set(state.get("achievements", [])) | progress.evaluate(state))
     save.write_raw(state)
 
 

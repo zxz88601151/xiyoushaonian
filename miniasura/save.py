@@ -1,14 +1,16 @@
-# MiniAsura 存档外围 —— schema 7（V2.0 §3 + V2.1 §2 + V2.2 §3 + V2.3 金币/难度 + V2.4 强化/保底符 + V2.5 爬塔）。
+# MiniAsura 存档外围 —— schema 8（V2.0 §3 + V2.1 §2 + V2.2 §3 + V2.3 金币/难度 + V2.4 强化/保底符 + V2.5 爬塔 + V2.8 图鉴/成就/统计）。
 # 路径由登录链经 set_path() 注入；engine 只调 load/write，不认识账号。
 # CLI dev 模式（python engine.py）不注入 = 用默认路径，v1 行为保持。
 import json
 import os
 
+import progress  # V2.8：成就/图鉴口径（progress 只依赖 mypack，无循环导入）
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 PATH = os.path.join(HERE, "save.json")
 _USER = ""
 
-SCHEMA = 7
+SCHEMA = 8
 SLOT_KEYS = ("weapon", "helm", "armor", "belt", "boots")
 
 
@@ -30,7 +32,7 @@ def load():
 
 
 def _migrate(old):
-    # 迁移链：v1（cleared 布尔）→ v2（week/playtime）→ v3（背包/装备）→ v4（任务/图/药/仓库）→ v5（金币/难度）→ v6（强化/保底符）→ v7（爬塔层数）
+    # 迁移链：v1（cleared）→ v2（week/playtime）→ v3（背包/装备）→ v4（任务/图/药/仓库）→ v5（金币/难度）→ v6（强化/保底符）→ v7（爬塔）→ v8（图鉴/成就/统计）
     # 规则只补默认值不改已有数值——升档不许丢东西
     if "cleared" in old:
         old["week"] = 1 if old.pop("cleared") else 0
@@ -49,6 +51,9 @@ def _migrate(old):
     old.setdefault("protect", 0)           # V2.4：保底符张数
     old.setdefault("tower_best", 0)        # V2.5：无底洞历史最高层
     old.setdefault("tower_layer", 0)       # V2.5：本次爬塔所在层（支持续爬）
+    old.setdefault("achievements", [])     # V2.8：已解锁成就 id（并集永不回归）
+    old.setdefault("codex_weapons", [])    # V2.8：曾经拥有过的武器名（卖出不灭灯）
+    old.setdefault("total_damage", 0)      # V2.8：累计总伤害
     for it in list(old.get("inventory", [])) + list(old.get("storage", [])):
         if isinstance(it, dict):
             it.setdefault("enh", 0)        # V2.4：旧装备补强化等级
@@ -59,8 +64,28 @@ def _migrate(old):
     return old
 
 
+def _prev():
+    """读旧档（只读本文件，不触发迁移写）：codex/成就并集合并用。读不到/读坏返回 {}。"""
+    if not os.path.exists(PATH):
+        return {}
+    try:
+        with open(PATH, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
 def write(player, next_index, week, playtime, maps_cleared=0,
           tracker=None, storage=None, difficulty=0):
+    # V2.8：codex/成就取“旧档 ∪ 本次”并集（+10 装备被回收后成就仍保留；周目重开也继承）
+    prev = _prev()
+    kills = dict(tracker.kills) if tracker else {}
+    codex = progress.merge_codex(prev.get("codex_weapons", []), player, storage)
+    norm = {"level": player["level"], "kills": kills, "maps_cleared": maps_cleared,
+            "week": week, "tower_best": player.get("tower_best", 0), "codex_weapons": codex,
+            "inventory": player.get("inventory", []), "storage": storage or [],
+            "equipment": player.get("equipment", {})}
+    ach = sorted(set(prev.get("achievements", [])) | progress.evaluate(norm))
     write_raw({
         "schema": SCHEMA, "user": _USER,
         "level": player["level"], "exp": player["exp"],
@@ -77,6 +102,9 @@ def write(player, next_index, week, playtime, maps_cleared=0,
         "storage": storage or [],
         "tower_best": player.get("tower_best", 0),
         "tower_layer": player.get("tower_layer", 0),
+        "achievements": ach,
+        "codex_weapons": codex,
+        "total_damage": player.get("total_damage", 0),
     })
 
 

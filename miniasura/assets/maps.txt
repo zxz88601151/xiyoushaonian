@@ -3,10 +3,10 @@
 1|花果山|xiaoyao1|d_map1|1.0
 2|水帘洞|-|d_map2|1.0
 3|斜月三星洞|xiaoyao2|d_map3|1.2
-4|东海龙宫|xiaoyao2,xiaoyao3|d_map4|1.3
+4|东海龙宫|xiabing,xiejian|d_map4|1.3
 5|南天门|xiaoyao3|d_map5|1.5
 6|蟠桃园|-|d_map6|1.0
-7|八卦炉|xiaoyao3,xiaoyao3|d_map7|1.6
+7|八卦炉|huoyao,huoyao|d_map7|1.6
 8|五行山|xiaoyao2,xiaoyao3|d_map8|1.7
 9|流沙河|xiaoyao3,xiaoyao3|d_map9|1.8
 10|白骨洞|boss|d_map10|1.0

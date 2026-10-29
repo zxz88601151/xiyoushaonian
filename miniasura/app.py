@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QApplication, QStackedWidget
 
 import gui
 import gui_bag
+import gui_codex
 import gui_enhance
 import gui_quests
 import gui_shop
@@ -29,7 +30,8 @@ class App(QStackedWidget):
         self.slotsw = SlotsWindow(self.pick_slot, self.to_server)
         self.hub = HubWindow(self.to_battle, self.to_bag, self.logout,
                              go_quests=self.to_quests, go_shop=self.to_shop,
-                             go_enhance=self.to_enhance, go_tower=self.to_tower)
+                             go_enhance=self.to_enhance, go_tower=self.to_tower,
+                             go_codex=self.to_codex)
         self.battle = gui.BattleWidget()
         self.battle.back_to_hub.connect(self.to_hub)
         self.bag = gui_bag.BagWindow(self.to_hub)
@@ -38,9 +40,10 @@ class App(QStackedWidget):
         self.questsw = gui_quests.QuestWindow(self.to_hub)
         self.enhancew = gui_enhance.EnhanceWindow(self.to_hub)
         self.towerw = gui_tower.TowerWindow(self.to_hub)
+        self.codexw = gui_codex.CodexWindow(self.to_hub)
         for w in (self.login, self.server, self.slotsw, self.hub, self.battle,
                   self.bag, self.storage, self.shop, self.questsw, self.enhancew,
-                  self.towerw):
+                  self.towerw, self.codexw):
             self.addWidget(w)
 
         sess = login.get_session()          # 会话恢复：记住上次登录
@@ -81,6 +84,10 @@ class App(QStackedWidget):
     def to_tower(self):
         self.towerw.refresh()
         self.setCurrentWidget(self.towerw)
+
+    def to_codex(self):
+        self.codexw.refresh()
+        self.setCurrentWidget(self.codexw)
 
     def to_battle(self):
         self.setCurrentWidget(self.battle)
