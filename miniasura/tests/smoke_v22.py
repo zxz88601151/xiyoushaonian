@@ -115,6 +115,7 @@ os.remove("save.json")
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PySide6.QtWidgets import QApplication, QMessageBox
 qapp = QApplication.instance() or QApplication([])
+import qtfont; qtfont.ensure_cjk_font(qapp)   # 字体引导：offscreen 下字体库为空，中文会变方框
 QMessageBox.warning = staticmethod(lambda *a, **k: QMessageBox.StandardButton.Ok)
 QMessageBox.information = staticmethod(lambda *a, **k: QMessageBox.StandardButton.Ok)
 QMessageBox.question = staticmethod(lambda *a, **k: QMessageBox.StandardButton.Yes)

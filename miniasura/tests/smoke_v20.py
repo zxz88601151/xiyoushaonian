@@ -44,6 +44,7 @@ from PySide6.QtWidgets import QApplication, QPushButton
 import app as appmod
 
 qapp = QApplication.instance() or QApplication([])
+import qtfont; qtfont.ensure_cjk_font(qapp)   # 字体引导：offscreen 下字体库为空，中文会变方框
 w = appmod.App()
 check("无会话启动 → 登录窗", w.currentWidget() is w.login)
 

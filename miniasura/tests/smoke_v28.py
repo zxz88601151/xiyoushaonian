@@ -176,6 +176,14 @@ check("CLI 全通基线不变（Lv.25 / 金币 798 / 图鉴与统计落盘）",
       after["maps_cleared"] == 10 and after["level"] == 25 and after["gold"] == 798
       and after["total_damage"] > 0 and len(after["codex_weapons"]) > 0)
 os.remove("save.json")
+# 字体引导（V2.8）：offscreen 下 Qt 字体库为空（实测 0 族）→ 中文全方框；
+# 门禁自证能加载系统中文 TTF，保证任何截图取证可读
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+from PySide6.QtWidgets import QApplication
+import qtfont
+qapp = QApplication.instance() or QApplication([])
+check("字体引导：offscreen 下可加载系统中文字体（截图/测试可读）",
+      qtfont.ensure_cjk_font(qapp) != "")
 r = subprocess.run([WB, "tests/smoke_v27.py"], capture_output=True,
                    text=True, encoding="utf-8", env=ENV)
 check("smoke_v27 回归", "全部通过" in r.stdout)

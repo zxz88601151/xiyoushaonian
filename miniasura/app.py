@@ -12,6 +12,7 @@ import gui_quests
 import gui_shop
 import gui_tower
 import login
+import qtfont
 import save
 import slots
 from gui_hub import HubWindow
@@ -120,6 +121,7 @@ class App(QStackedWidget):
 
 def main():
     app = QApplication(sys.argv)
+    qtfont.ensure_cjk_font(app)     # V2.8：offscreen/无字体环境兜底；native 下不改系统默认
     w = App()
     w.show()
     sys.exit(app.exec())
