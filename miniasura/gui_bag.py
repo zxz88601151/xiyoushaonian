@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (QGridLayout, QHBoxLayout, QLabel, QListWidget,
                                QMessageBox, QPushButton, QTextEdit, QVBoxLayout,
                                QWidget)
 
-import gear
+import gear, gem
 import save
 
 
@@ -105,7 +105,7 @@ class BagWindow(QWidget):
         row = self.bag.currentRow()
         if 0 <= row < len(self.items):
             it = self.items[row]
-            lines = [gear.item_line(it)]
+            lines = [gear.item_line(it)] + (["  孔位 %d（%s）" % (gem.holes_of(it), "".join("●" if g else "○" for g in gem.slots_of(it)))] if gem.holes_of(it) else [])
             for a in it["affixes"]:
                 lines.append(f"  · {a['name']} +{a['val']:.2f}")
             self.detail.setText("\n".join(lines))

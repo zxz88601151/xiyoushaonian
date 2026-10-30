@@ -8,7 +8,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 class HubWindow(QWidget):
     def __init__(self, go_battle, go_bag, go_login, go_quests=None, go_shop=None,
-                 go_enhance=None, go_tower=None, go_codex=None, go_daily=None):
+                 go_enhance=None, go_tower=None, go_codex=None, go_daily=None, go_grow=None):
         super().__init__()
         self.go_tower = go_tower or (lambda: None)
         self.tower_btn = QPushButton("无底洞（爬塔）")     # OD-V25-03：通关一次后才显示
@@ -17,6 +17,8 @@ class HubWindow(QWidget):
         codex_btn.clicked.connect(go_codex or (lambda: None))
         daily_btn = QPushButton("日常 / 周常 / 签到")     # V2.9-D2
         daily_btn.clicked.connect(go_daily or (lambda: None))
+        grow_btn = QPushButton("成长（宝石 / 套装 / 属性点）")     # V3.0-A
+        grow_btn.clicked.connect(go_grow or (lambda: None))
         news = QTextEdit()
         news.setReadOnly(True)
         with open(os.path.join(HERE, "news.txt"), encoding="utf-8") as f:
@@ -46,6 +48,7 @@ class HubWindow(QWidget):
         lay.addWidget(self.tower_btn)
         lay.addWidget(codex_btn)
         lay.addWidget(daily_btn)
+        lay.addWidget(grow_btn)
         lay.addWidget(bag)
         lay.addWidget(out)
         self.setLayout(lay)

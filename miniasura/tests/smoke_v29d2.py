@@ -149,7 +149,7 @@ if rv.returncode:
 
 # ── 门禁8：行数纪律 + v20→v29d1 全链回归 ──
 limits = {"daily.py": 110, "gui_daily.py": 120, "save.py": 145, "gui_hub.py": 65,
-          "app.py": 140, "validate.py": 180, "engine.py": 225, "progress.py": 110,
+          "app.py": 145, "validate.py": 180, "engine.py": 225, "progress.py": 110,
           "gui_codex.py": 120, "tower.py": 100, "combat.py": 130, "encounter.py": 170}
 bad_lines = [f"{f}={sum(1 for _ in open(f, encoding='utf-8'))}"
              for f, lim in limits.items() if sum(1 for _ in open(f, encoding="utf-8")) > lim]

@@ -9,6 +9,7 @@ import gui_bag
 import gui_codex
 import gui_daily
 import gui_enhance
+import gui_grow
 import gui_quests
 import gui_shop
 import gui_tower
@@ -33,7 +34,8 @@ class App(QStackedWidget):
         self.hub = HubWindow(self.to_battle, self.to_bag, self.logout,
                              go_quests=self.to_quests, go_shop=self.to_shop,
                              go_enhance=self.to_enhance, go_tower=self.to_tower,
-                             go_codex=self.to_codex, go_daily=self.to_daily)
+                             go_codex=self.to_codex, go_daily=self.to_daily,
+                             go_grow=self.to_grow)
         self.battle = gui.BattleWidget()
         self.battle.back_to_hub.connect(self.to_hub)
         self.bag = gui_bag.BagWindow(self.to_hub)
@@ -44,9 +46,10 @@ class App(QStackedWidget):
         self.towerw = gui_tower.TowerWindow(self.to_hub)
         self.codexw = gui_codex.CodexWindow(self.to_hub)
         self.dailyw = gui_daily.DailyWindow(self.to_hub)
+        self.groww = gui_grow.GrowWindow(self.to_hub)      # V3.0-A：宝石 / 套装 / 属性点
         for w in (self.login, self.server, self.slotsw, self.hub, self.battle,
                   self.bag, self.storage, self.shop, self.questsw, self.enhancew,
-                  self.towerw, self.codexw, self.dailyw):
+                  self.towerw, self.codexw, self.dailyw, self.groww):
             self.addWidget(w)
 
         sess = login.get_session()          # 会话恢复：记住上次登录
@@ -95,6 +98,10 @@ class App(QStackedWidget):
     def to_daily(self):
         self.dailyw.refresh()
         self.setCurrentWidget(self.dailyw)
+
+    def to_grow(self):
+        self.groww.refresh()
+        self.setCurrentWidget(self.groww)
 
     def to_battle(self):
         self.setCurrentWidget(self.battle)
