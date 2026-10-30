@@ -7,7 +7,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "lesson03"))
 import mypack
 
-import combat, encounter, enhance, gear, loot, quests, save   # 校验器只读数据层，不碰引擎/GUI
+import attrs, combat, encounter, enhance, gear, gem, loot, quests, save, sets   # 只读数据层，不碰引擎/GUI
 
 
 def load_cfg():
@@ -157,6 +157,38 @@ def check_v32(cfg):
     return not bad, bad
 
 
+def check_v33(cfg):
+    """V33-01 宝石/套装表与三配置段合法：列数、key 唯一、属性/槽位/效果键在白名单、孔位 0-2、参数区间。"""
+    gr, st, stats = data_rows("gems.txt"), data_rows("sets.txt"), set(attrs.DIMS)
+    legal = set(sets.FLAT) | set(sets.PCT)
+    bad = ["gems:%s" % l for l in gr
+           if len(l.split("|")) != 4 or l.split("|")[2] not in stats or float(l.split("|")[3]) <= 0]
+    bad += ["sets:%s" % l for l in st if len(l.split("|")) != 5
+            or any(x not in gear.SLOTS for x in l.split("|")[2].split(","))
+            or not (l.split("|")[3] or l.split("|")[4])]
+    for l in st:
+        c = l.split("|")
+        if len(c) == 5:
+            bad += ["sets:%s 键 %s" % (c[0], p.split(":")[0].strip())
+                    for p in (c[3] + ";" + c[4]).split(";")
+                    if p.strip() and p.split(":")[0].strip() not in legal]
+    for tag, rows in (("宝石", gr), ("套装", st)):
+        ids = [l.split("|")[0] for l in rows]
+        if len(ids) != len(set(ids)):
+            bad.append("%s key 重复" % tag)
+    if max(gem.HOLES) > 2:
+        bad.append("孔位上限 %d" % max(gem.HOLES))
+    need = {"gem": (("stash", 1), ("shard_per_elite", 0), ("shard_per_rare", 0)),
+            "set": (("drop_pct", 0),), "attr": (("points_per_level", 1), ("atk_flat", 0), ("hp_flat", 0),
+                                                ("def_flat", 0), ("crit_bp", 0))}
+    for sec, keys in need.items():
+        for k, lo in keys:
+            v = cfg.getint(sec, k, fallback=-1)
+            if v < lo or (k == "drop_pct" and v > 100):
+                bad.append("[%s]%s=%s" % (sec, k, v))
+    return not bad, bad
+
+
 def main():
     cfg = load_cfg()
     rows = [("1 掉落表部位/品质/概率合法", check_loot(cfg)),
@@ -167,7 +199,7 @@ def main():
             ("6 存档 v1→v%d 迁移" % save.SCHEMA, check_migrate()),
             ("7 金币收支对账", check_gold_flow(cfg)),
             ("8 技能必有解锁等级（V27-01）", check_skills(cfg)),
-            ("9 特效 tribe 合法（V27-02）", check_weapon_tribes())] + check_v28(cfg) + encounter.check_v29(cfg) + encounter.check_v30(cfg) + [("17 称号表合法（V31-01）", check_v31()), ("18 日常/周常/签到配置（V32-01）", check_v32(cfg))]
+            ("9 特效 tribe 合法（V27-02）", check_weapon_tribes())] + check_v28(cfg) + encounter.check_v29(cfg) + encounter.check_v30(cfg) + [("17 称号表合法（V31-01）", check_v31()), ("18 日常/周常/签到配置（V32-01）", check_v32(cfg))] + [("19 宝石/套装/属性点配置（V33-01）", check_v33(cfg))]
     bad = sum(0 if ok else 1 for _, (ok, _) in rows)
     for name, (ok, detail) in rows:
         print(("✓" if ok else "✗"), name, ("" if ok else "  → %s" % detail))

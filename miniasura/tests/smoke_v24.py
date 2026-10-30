@@ -143,7 +143,7 @@ save.set_path(os.path.join(HERE, "save.json"))
 
 # ── 门禁6 行数与回归──
 limits = {"engine.py": 225, "enhance.py": 150, "gui_enhance.py": 200,
-          "tower.py": 100, "validate.py": 180, "gui_tower.py": 200}
+          "tower.py": 100, "validate.py": 215, "gui_tower.py": 200}
 bad_lines = []
 for f, lim in limits.items():
     n = sum(1 for _ in open(f, encoding="utf-8"))

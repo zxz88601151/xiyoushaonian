@@ -129,7 +129,7 @@ check("6 UI：达标可点、领取后金币 +40 且按钮变已领取、未达�
       ready and after["gold"] == 40 and "已领取" in btn.text() and not btn.isEnabled()
       and not w.btns[("daily", "damage")].isEnabled())
 
-# ── 门禁7：v10→v11 迁移 + validate 十八项 ──
+# ── 门禁7：v10→v11 迁移 + validate 十九项 ──
 v10 = {"schema": 10, "level": 22, "exp": 33, "hp": 210, "mp": 90, "attack": 71, "next": 5,
        "week": 1, "playtime": 1234, "gold": 456, "difficulty": 1, "protect": 2,
        "tower_best": 17, "tower_layer": 3, "maps_cleared": 10, "total_damage": 8888,
@@ -143,13 +143,13 @@ check("7 v10→v%d 迁移：D2 三字段就位且旧值一字未动" % save.SCHE
       kept and m["schema"] == save.SCHEMA and m["daily"] == {"date": "", "base": {}, "claimed": []}
       and m["weekly"]["week"] == "" and m["checkin"] == {"last": "", "streak": 0, "total": 0})
 rv = subprocess.run([WB, "validate.py"], capture_output=True, text=True, encoding="utf-8", env=ENV)
-check("7b validate 十八项全绿", rv.returncode == 0 and rv.stdout.count("✓") == 18)
+check("7b validate 十九项全绿", rv.returncode == 0 and rv.stdout.count("✓") == 19)
 if rv.returncode:
     print(rv.stdout[-800:])
 
 # ── 门禁8：行数纪律 + v20→v29d1 全链回归 ──
 limits = {"daily.py": 110, "gui_daily.py": 120, "save.py": 145, "gui_hub.py": 65,
-          "app.py": 145, "validate.py": 180, "engine.py": 225, "progress.py": 110,
+          "app.py": 145, "validate.py": 215, "engine.py": 225, "progress.py": 110,
           "gui_codex.py": 120, "tower.py": 100, "combat.py": 130, "encounter.py": 170}
 bad_lines = [f"{f}={sum(1 for _ in open(f, encoding='utf-8'))}"
              for f, lim in limits.items() if sum(1 for _ in open(f, encoding="utf-8")) > lim]
