@@ -33,7 +33,7 @@
 ├── lesson03/        ← mypack.py（被 miniasura 复用）
 ├── lesson04/  lesson05/
 ├── tools/           ← lua-5.1.5（自编译解释器）
-└── miniasura/       ← 按斗战神图纸复刻的文字版游戏（V2.9-C）
+└── miniasura/       ← 按斗战神图纸复刻的文字版游戏（V2.9-D1）
 ```
 
 ## 进度记录
@@ -81,6 +81,7 @@
 | 2026-10-29 | **门禁自证修复 + GUI 环境补齐**：审计发现 smoke_v29a 保底两项误判——测试每轮新传 `storage=[]`，而 boss 池 `weapon:2:100` 必掉紫装，49 轮填满 20 格背包后 staff 流入该临时列表，断言只查 `inventory` 故查无。修法：`store` 提到循环外共用（复刻引擎持久仓库），断言升级为 `gear.has_staff(pl, store)`（背包+仓库+已穿戴，比原口径更严）；**反证验证**——临时把保底判定 `>=49` 改 `>=999` 关掉，两条断言立刻变红，证明未削弱测试。同时给沙箱默认 Python 补齐 PySide6 6.12.0（此前 `smoke_v28 回归 ✗` 纯属缺 Qt 而非业务回归），装后 `pip check` 无损坏依赖、`QApplication` 可创建、offscreen 启动 app.py 无异常。整链 `v20→…→v29a` 19/19 全绿（3m55s）。提交 8eda792 | ✅ 修复过 |
 | 2026-10-29 | **V2.9-B 毕业**（DESIGN_V2_9_B.md 冻结，B1 先 / B2 后，分批复验）：B1 爬塔战报接入（tower 补传 `rep`，win/dead 打印战报、escaped 不打印；实施后自审发现 escaped 曾被条件遗漏，已按 fail-closed 修正）。B2 稀有怪三回合逃跑：返回契约扩为 `win/dead/escaped/fled`，稀有标记改为随 `mon` 传递，`[rare_flee] flee_rounds=3` 入 game.ini；fled 推进不回大厅、算本场已处理、不发奖励/不记击杀/不发 win/lose；dead 优先；rounds≥2 有预警。tower 本期不启用稀有，若意外 fled 则 WARN 并按 escaped fail-closed。schema 9 不变。行数显式修订：engine 220→222、encounter 160→170、validate 160→165，combat 130/tower 100 不变；validate 增至十六项（V30-01）。smoke_v29b 七门禁 7/7 + v20→v29a 全链回归全绿（4m28s），week0 基线 Lv.25/金币798/maps10 不变 | ✅ V2.9-B 毕业 |
 | 2026-10-30 | **V2.9-C 毕业**（DESIGN_V2_9_C.md 冻结，D1-D8）：GUI 战报"显眼化"——`print_report` 改为单点分派的富通道（`io.report(rep, line)` 有则调、无则回退 `say`，**CLI 输出逐字节不变**），日志上方新增常驻 `ReportCard`（gui_report.py 45 行）：第一行「最近一场战报 · X 回合 · 造成/承受」，第二行「暴击 · MISS ｜ 本局累计：N 场 / 造成 / 承受」；主线 `begin()` 清零、爬塔跨层累计，合计只活窗口内存**不写档不升 schema**。审计实测：全通日志 272 行 / 12 条战报，白骨夫人战报落在第 275 行且其后还有结局统计——这是"埋没"的直接证据。战斗窗与爬塔窗共用同一组件；样式只用加粗+边框不写死颜色（防深色系统主题不可读）；escaped/fled 不打印战报，故标题写「最近一场」而非「本次」。encounter 保持 170 行不变，gui.py 197→207、gui_tower 165→174。smoke_v29c 八门禁 10/10 + validate 十六项 + v20→v29b 全链回归全绿 | ✅ V2.9-C 毕业 |
+| 2026-10-30 | **V2.9-D1 毕业**（DESIGN_V2_9_D1.md 冻结，R1-R10，分 D1a 数据层 / D1b 表现层两批）：**schema 9→10**。① 变体击杀独立计数 `elite_kills`/`rare_kills`——审计发现 `tracker.kills` 只按怪物 key 计数、精英稀有与普通同 key，故另开计数而**不污染 kills**（图鉴与总击杀口径不变），主线 win 时按 `fight["elite"]`/`fight["rare"]` 递增，爬塔不参与；② 新增成就 `elite_hunter`(精英 10)/`rare_hunter`(稀有 3)，条件类型扩到 8 种；③ 称号表 `assets/titles.txt` 8 条与成就 1:1，纯荣誉不加属性，`title` 字段落盘，图鉴窗新增第 5 页「称号」（**唯一写档页**，只写 title 一个键，未解锁不进下拉、重开预选当前佩戴），大厅顶部显示当前称号；④ 幻影榜：单场最高伤害 / 单场最少回合 / 爬塔最高层，只在 win 且更优时刷新（低伤害高回合不覆盖），并入统计页不新开页。v9→v10 只补默认值实测旧值一字未动。行数显式修订：engine 222→225、validate 165→170、progress 87→108、save 118→128、gui_codex 85→120、gui_hub 53→59；tower 保持 100。validate 增至十七项（V31-01 称号表合法）。smoke_v29d1 八门禁 9/9 + v20→v29c 全链回归全绿 | ✅ V2.9-D1 毕业 |
 
 ## 环境（搬迁后需注意）
 | 项 | 值 |
@@ -97,7 +98,7 @@
 
 - `smoke_v22` 起 GUI 用例直接 `from PySide6.QtWidgets import QApplication`，开真窗口断言控件
 - `smoke_v28` 末尾「字体引导」门禁用 offscreen 平台加载系统中文字体（保证截图取证可读）
-- `smoke_v29a` 串行回归 `v20→…→v29a`；`smoke_v29b` 再串至 `v29a`，`smoke_v29c` 再串至 `v29b`（GUI 战报卡门禁要开真窗口），任一环 import 失败即全链报红
+- `smoke_v29a` 串行回归 `v20→…→v29a`；`smoke_v29b` 再串至 `v29a`，`smoke_v29c` 再串至 `v29b`，`smoke_v29d1` 再串至 `v29c`（GUI 战报卡/称号门禁要开真窗口），任一环 import 失败即全链报红
 
 **缺件时的症状很坑**：链跑到 v28 末尾才抛 `ModuleNotFoundError`，v29a 汇总只显示一行
 「`smoke_v28 回归 ✗`」，看起来像业务回归，实际是环境缺件。先自检：
@@ -116,11 +117,11 @@ python -m pip install PySide6
 > wheel 往往已完整落地——先 `python -m pip check` 复查导入是否正常；确有问题就装进独立 venv
 > 或改用 `--target` 目录，避开对既有文件的覆盖。
 
-**跑测注意**：`smoke_v29c` 全套回归链约 5 分钟，超出默认命令超时会被 SIGTERM 截断，且管道缓冲会吞掉全部输出
+**跑测注意**：`smoke_v29d1` 全套回归链约 5.5 分钟，超出默认命令超时会被 SIGTERM 截断，且管道缓冲会吞掉全部输出
 （表现为"无任何输出"）。务必加 `-u` 关缓冲，必要时后台运行：
 
 ```
-python -u tests/smoke_v29c.py
+python -u tests/smoke_v29d1.py
 ```
 
 启动：
@@ -128,7 +129,7 @@ python -u tests/smoke_v29c.py
 cd /d D:/西游记文字版/miniasura
 python app.py                 :: GUI 全链路
 python engine.py              :: CLI 文字版
-python -u tests/smoke_v29c.py :: 全套门禁（v20→…→v29b 回归链 + V2.9-C 战报卡八门禁，可重复执行，约 5 分钟）
-python validate.py            :: 数据校验器（十六项：七项数据表 + V27 技能/特效 + V28 成就/新怪/地图 + V29 阈值/精英/保底 + V30 稀有逃跑，上限 165）
+python -u tests/smoke_v29d1.py :: 全套门禁（v20→…→v29c 回归链 + V2.9-D1 称号/成就/幻影榜八门禁，约 5.5 分钟）
+python validate.py            :: 数据校验器（十七项：七项数据表 + V27 技能/特效 + V28 成就/新怪/地图 + V29 阈值/精英/保底 + V30 稀有逃跑 + V31 称号表，上限 170）
 python tower.py               :: V2.5 无底洞爬塔 CLI（通关一次后解锁）
 ```

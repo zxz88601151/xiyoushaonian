@@ -1,6 +1,5 @@
 # V2.9-D1 出口验收 · 八门禁（DESIGN_V2_9_D1 §5）
-# D1a：变体计数 / 图鉴不受污染 / 成就 / 称号表 / 幻影榜 / 迁移 / 行数与全链。
-# 门禁 5（佩戴与大厅显示）属 D1b 表现层，届时补在本文件。
+# D1a：变体计数 / 图鉴不受污染 / 成就 / 称号表 / 幻影榜 / 迁移 / 行数与全链；D1b：佩戴写档与大厅显示。
 import configparser
 import json
 import os
@@ -10,6 +9,7 @@ import sys
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, HERE)
 os.chdir(HERE)
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")   # D1b：本文件要开真窗口断言控件
 WB = sys.executable
 ENV = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
 
@@ -83,6 +83,35 @@ ach_ids = {a["id"] for a in progress.load_achievements()}
 check("4 称号表：%d 条、id 唯一、引用成就全存在、1:1" % len(titles),
       len(titles) == 8 and len({t["id"] for t in titles}) == 8
       and {t["ach"] for t in titles} == ach_ids)
+
+# ── 门禁5：佩戴写档 + 大厅显示（D1b 表现层）──
+from PySide6.QtWidgets import QApplication
+
+import qtfont
+
+qapp = QApplication.instance() or QApplication([])
+qtfont.ensure_cjk_font(qapp)
+import gui_codex
+import gui_hub
+
+save.write_raw({"schema": save.SCHEMA, "level": 20, "achievements": ["clear_all"], "title": ""})
+cx = gui_codex.CodexWindow(lambda: None)
+cx.refresh()
+locked_hidden = cx.title_box.findData("tower30") == -1          # 未解锁不进下拉
+can_wear = cx.title_box.findData("clear_all") >= 0
+cx.title_box.setCurrentIndex(cx.title_box.findData("clear_all"))
+cx.wear_title()
+worn = (save.load() or {}).get("title") == "clear_all"
+preset = cx.title_box.currentData() == "clear_all"      # 重新打开时预选当前佩戴
+hub = gui_hub.HubWindow(lambda: None, lambda: None, lambda: None)
+hub.refresh()
+shown = "称号：西行者" == hub.title_lbl.text()
+cx.title_box.setCurrentIndex(0)                                  # 回到「不佩戴」
+cx.wear_title()
+cleared = (save.load() or {}).get("title") == ""
+check("5 佩戴：未解锁不进下拉、佩戴写档、重开预选、大厅显示、可取消",
+      locked_hidden and can_wear and worn and preset and shown and cleared
+      and "● 西行者" in cx.title_list.toPlainText())
 
 # ── 门禁6：幻影榜只刷新更优值（更高伤害 / 更少回合）──
 p = {}

@@ -19,6 +19,7 @@ class HubWindow(QWidget):
         news.setReadOnly(True)
         with open(os.path.join(HERE, "news.txt"), encoding="utf-8") as f:
             news.setPlainText(f.read())
+        self.title_lbl = QLabel("称号：无")     # V2.9-D1：当前称号（refresh 读档刷新）
         start = QPushButton("进入游戏（继续 / 开新周目）")
         start.clicked.connect(go_battle)
         bag = QPushButton("背包 / 装备")
@@ -35,6 +36,7 @@ class HubWindow(QWidget):
         lay = QVBoxLayout()
         lay.addWidget(QLabel("主城"))
         lay.addWidget(news)
+        lay.addWidget(self.title_lbl)
         lay.addWidget(start)
         lay.addWidget(quest)
         lay.addWidget(shop)
@@ -47,7 +49,11 @@ class HubWindow(QWidget):
         self.tower_btn.hide()          # 默认隐藏，refresh() 按存档解锁情况决定显隐
 
     def refresh(self):
-        """V2.5：爬塔入口按通关情况显隐（周目 ≥1 或已爬过塔）。"""
+        """V2.5：爬塔入口按通关情况显隐；V2.9-D1：显示当前佩戴称号。"""
+        import progress
         import save
         import tower
-        self.tower_btn.setVisible(tower.unlocked(save.load()))
+        st = save.load() or {}
+        name = next((t["name"] for t in progress.load_titles() if t["id"] == st.get("title")), "无")
+        self.title_lbl.setText("称号：%s" % name)
+        self.tower_btn.setVisible(tower.unlocked(st))
