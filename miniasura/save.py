@@ -1,16 +1,17 @@
-# MiniAsura 存档外围 —— schema 10（V2.0 §3 + V2.1 §2 + V2.2 §3 + V2.3 金币/难度 + V2.4 强化/保底符 + V2.5 爬塔 + V2.8 图鉴/成就/统计 + V2.9-A 保底计数 + V2.9-D1 称号/变体击杀/幻影榜）。
+# MiniAsura 存档外围 —— schema 11（V2.0 §3 + V2.1 §2 + V2.2 §3 + V2.3 金币/难度 + V2.4 强化/保底符 + V2.5 爬塔 + V2.8 图鉴/成就/统计 + V2.9-A 保底计数 + V2.9-D1 称号/变体击杀/幻影榜 + V2.9-D2 日常/周常/签到）。
 # 路径由登录链经 set_path() 注入；engine 只调 load/write，不认识账号。
 # CLI dev 模式（python engine.py）不注入 = 用默认路径，v1 行为保持。
 import json
 import os
 
+import daily     # V2.9-D2：跨日/跨周滚动（daily 不依赖 save，无循环导入）
 import progress  # V2.8：成就/图鉴口径（progress 只依赖 mypack，无循环导入）
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PATH = os.path.join(HERE, "save.json")
 _USER = ""
 
-SCHEMA = 10
+SCHEMA = 11
 SLOT_KEYS = ("weapon", "helm", "armor", "belt", "boots")
 
 
@@ -60,6 +61,9 @@ def _migrate(old):
     old.setdefault("title", "")            # V2.9-D1：当前佩戴称号 id（空串=无）
     old.setdefault("records", {"best_dealt": 0, "best_dealt_mon": "",
                                "best_rounds": 0, "best_rounds_mon": ""})   # V2.9-D1：幻影榜
+    old.setdefault("daily", {"date": "", "base": {}, "claimed": []})       # V2.9-D2：日常
+    old.setdefault("weekly", {"week": "", "base": {}, "claimed": []})      # V2.9-D2：周常
+    old.setdefault("checkin", {"last": "", "streak": 0, "total": 0})       # V2.9-D2：签到
     for it in list(old.get("inventory", [])) + list(old.get("storage", [])):
         if isinstance(it, dict):
             it.setdefault("enh", 0)        # V2.4：旧装备补强化等级
@@ -117,10 +121,12 @@ def write(player, next_index, week, playtime, maps_cleared=0,
         "title": player.get("title", ""),
         "records": player.get("records") or {"best_dealt": 0, "best_dealt_mon": "",
                                              "best_rounds": 0, "best_rounds_mon": ""},
+        "daily": prev.get("daily") or {}, "weekly": prev.get("weekly") or {}, "checkin": prev.get("checkin") or {},
     })
 
 
 def write_raw(data):
+    daily.touch(data)          # V2.9-D2：跨日/跨周滚动（所有写档路径统一收口）
     d = os.path.dirname(PATH)
     if d and not os.path.exists(d):
         os.makedirs(d)          # 首次写档时补建 saves/<server>/<user>/ 目录链

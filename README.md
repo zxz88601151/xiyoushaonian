@@ -33,7 +33,7 @@
 ├── lesson03/        ← mypack.py（被 miniasura 复用）
 ├── lesson04/  lesson05/
 ├── tools/           ← lua-5.1.5（自编译解释器）
-└── miniasura/       ← 按斗战神图纸复刻的文字版游戏（V2.9-D1）
+└── miniasura/       ← 按斗战神图纸复刻的文字版游戏（V2.9-D2）
 ```
 
 ## 进度记录
@@ -82,6 +82,7 @@
 | 2026-10-29 | **V2.9-B 毕业**（DESIGN_V2_9_B.md 冻结，B1 先 / B2 后，分批复验）：B1 爬塔战报接入（tower 补传 `rep`，win/dead 打印战报、escaped 不打印；实施后自审发现 escaped 曾被条件遗漏，已按 fail-closed 修正）。B2 稀有怪三回合逃跑：返回契约扩为 `win/dead/escaped/fled`，稀有标记改为随 `mon` 传递，`[rare_flee] flee_rounds=3` 入 game.ini；fled 推进不回大厅、算本场已处理、不发奖励/不记击杀/不发 win/lose；dead 优先；rounds≥2 有预警。tower 本期不启用稀有，若意外 fled 则 WARN 并按 escaped fail-closed。schema 9 不变。行数显式修订：engine 220→222、encounter 160→170、validate 160→165，combat 130/tower 100 不变；validate 增至十六项（V30-01）。smoke_v29b 七门禁 7/7 + v20→v29a 全链回归全绿（4m28s），week0 基线 Lv.25/金币798/maps10 不变 | ✅ V2.9-B 毕业 |
 | 2026-10-30 | **V2.9-C 毕业**（DESIGN_V2_9_C.md 冻结，D1-D8）：GUI 战报"显眼化"——`print_report` 改为单点分派的富通道（`io.report(rep, line)` 有则调、无则回退 `say`，**CLI 输出逐字节不变**），日志上方新增常驻 `ReportCard`（gui_report.py 45 行）：第一行「最近一场战报 · X 回合 · 造成/承受」，第二行「暴击 · MISS ｜ 本局累计：N 场 / 造成 / 承受」；主线 `begin()` 清零、爬塔跨层累计，合计只活窗口内存**不写档不升 schema**。审计实测：全通日志 272 行 / 12 条战报，白骨夫人战报落在第 275 行且其后还有结局统计——这是"埋没"的直接证据。战斗窗与爬塔窗共用同一组件；样式只用加粗+边框不写死颜色（防深色系统主题不可读）；escaped/fled 不打印战报，故标题写「最近一场」而非「本次」。encounter 保持 170 行不变，gui.py 197→207、gui_tower 165→174。smoke_v29c 八门禁 10/10 + validate 十六项 + v20→v29b 全链回归全绿 | ✅ V2.9-C 毕业 |
 | 2026-10-30 | **V2.9-D1 毕业**（DESIGN_V2_9_D1.md 冻结，R1-R10，分 D1a 数据层 / D1b 表现层两批）：**schema 9→10**。① 变体击杀独立计数 `elite_kills`/`rare_kills`——审计发现 `tracker.kills` 只按怪物 key 计数、精英稀有与普通同 key，故另开计数而**不污染 kills**（图鉴与总击杀口径不变），主线 win 时按 `fight["elite"]`/`fight["rare"]` 递增，爬塔不参与；② 新增成就 `elite_hunter`(精英 10)/`rare_hunter`(稀有 3)，条件类型扩到 8 种；③ 称号表 `assets/titles.txt` 8 条与成就 1:1，纯荣誉不加属性，`title` 字段落盘，图鉴窗新增第 5 页「称号」（**唯一写档页**，只写 title 一个键，未解锁不进下拉、重开预选当前佩戴），大厅顶部显示当前称号；④ 幻影榜：单场最高伤害 / 单场最少回合 / 爬塔最高层，只在 win 且更优时刷新（低伤害高回合不覆盖），并入统计页不新开页。v9→v10 只补默认值实测旧值一字未动。行数显式修订：engine 222→225、validate 165→170、progress 87→108、save 118→128、gui_codex 85→120、gui_hub 53→59；tower 保持 100。validate 增至十七项（V31-01 称号表合法）。smoke_v29d1 八门禁 9/9 + v20→v29c 全链回归全绿 | ✅ V2.9-D1 毕业 |
+| 2026-10-30 | **V2.9-D2 毕业**（DESIGN_V2_9_D2.md 冻结，Q1-Q10）：**schema 10→11**。日常 / 周常 / 签到三块落地。① **快照差值口径**（Q1）：`base` 记滚动时刻的累计快照（总击杀 / 总伤害 / 爬塔最高层），进度 = 当前 − base，负数截断为 0、上限截到 need —— 因此"跨日那一刻已有 500 杀"不会把今天刷成已完成；`lose:` 前缀键不计入击杀（与图鉴口径一致）；② **单点滚动**（Q2/§6）：`daily.touch` 只挂在 `save.write_raw` 一处，所有写档路径自动收口，只重置 `date`/`base`/`claimed`，**不发奖励、不动其它字段**；读态走 `daily.view`（日期对不上按"今天刚开始"算、**不写档**），未写档也能正确显示 0 进度；③ **日期源可替换**（Q5）：`today()` / `this_week()`（isocalendar 周键）各自单函数，门禁直接替换函数注入 D1/D2/跨周，不碰系统时钟；④ **签到**：金币 `30+(N-1)×20`、第 7 天额外 +1 保底符、同日拒绝、断签只把 streak 重置为 1（`total` 累计不清零）；⑤ GUI `gui_daily.py` 三页（日常 / 周常 / 签到），进度与按钮状态**全部来自 `daily.status`**，界面不自算增量，领取即写档且只改 `claimed`/`gold`/`protect`；大厅加「日常 / 签到」入口。`daily` 不 import `save`/`configparser`（无循环依赖，滚动不读配置）。行数：daily 97 / gui_daily 89 / save 128→134 / validate 170→180 / app 137 / gui_hub 59→62。validate 增至十八项（V32-01 日常配置合法）。**基线随动修正**：`smoke_v29d1` 两处写死的 `schema == 10` 改引 `save.SCHEMA` 与迁移默认值断言（含 D2 三字段），避免以后每升一版期数都要再改测试。smoke_v29d2 九项全绿 + v20→v29d1 全链回归全绿 | ✅ V2.9-D2 毕业 |
 
 ## 环境（搬迁后需注意）
 | 项 | 值 |
@@ -93,12 +94,14 @@
 | Lua 解释器 | `..\tools\lua-5.1.5\lua.exe`（脚本内部已用相对路径，无需 PATH） |
 | 用户 PATH 旧条目 | `F:/WeGameApps/斗战神/learn-lab/tools/lua-5.1.5` 已失效 → 需改为 `D:/西游记文字版/tools/lua-5.1.5` 才能在终端直接敲 `lua` |
 
+> **Agent/沙箱里跑门禁的坑（2026-10-30 实测）**：自动化环境里的 `python` 会被解析到 `C:/Users/Administrator/.workbuddy/binaries/python/versions/3.13.x/python`（WorkBuddy 自带解释器），**它没有 PySide6**，直接跑 `smoke_v29d2` 会在门禁 6 抛 `ModuleNotFoundError: No module named 'PySide6'`，而前 5 项逻辑门禁全绿——看起来像"业务只坏一半"。这不是代码问题。跑全套门禁用显式解释器：`D:/Software/Python313/python.exe -u tests/smoke_v29d2.py`。
+
 ### PySide6 是测试硬依赖（不是"想看图才装"）
 门禁不是纯逻辑测试，Qt 缺了整条回归链会红：
 
 - `smoke_v22` 起 GUI 用例直接 `from PySide6.QtWidgets import QApplication`，开真窗口断言控件
 - `smoke_v28` 末尾「字体引导」门禁用 offscreen 平台加载系统中文字体（保证截图取证可读）
-- `smoke_v29a` 串行回归 `v20→…→v29a`；`smoke_v29b` 再串至 `v29a`，`smoke_v29c` 再串至 `v29b`，`smoke_v29d1` 再串至 `v29c`（GUI 战报卡/称号门禁要开真窗口），任一环 import 失败即全链报红
+- `smoke_v29a` 串行回归 `v20→…→v29a`；`smoke_v29b` 再串至 `v29a`，`smoke_v29c` 再串至 `v29b`，`smoke_v29d1` 再串至 `v29c`，`smoke_v29d2` 再串至 `v29d1`（GUI 战报卡/称号/日常窗门禁要开真窗口），任一环 import 失败即全链报红
 
 **缺件时的症状很坑**：链跑到 v28 末尾才抛 `ModuleNotFoundError`，v29a 汇总只显示一行
 「`smoke_v28 回归 ✗`」，看起来像业务回归，实际是环境缺件。先自检：
@@ -117,11 +120,11 @@ python -m pip install PySide6
 > wheel 往往已完整落地——先 `python -m pip check` 复查导入是否正常；确有问题就装进独立 venv
 > 或改用 `--target` 目录，避开对既有文件的覆盖。
 
-**跑测注意**：`smoke_v29d1` 全套回归链约 5.5 分钟，超出默认命令超时会被 SIGTERM 截断，且管道缓冲会吞掉全部输出
+**跑测注意**：`smoke_v29d2` 全套回归链约 4 分钟，超出默认命令超时会被 SIGTERM 截断，且管道缓冲会吞掉全部输出
 （表现为"无任何输出"）。务必加 `-u` 关缓冲，必要时后台运行：
 
 ```
-python -u tests/smoke_v29d1.py
+python -u tests/smoke_v29d2.py
 ```
 
 启动：
@@ -129,7 +132,7 @@ python -u tests/smoke_v29d1.py
 cd /d D:/西游记文字版/miniasura
 python app.py                 :: GUI 全链路
 python engine.py              :: CLI 文字版
-python -u tests/smoke_v29d1.py :: 全套门禁（v20→…→v29c 回归链 + V2.9-D1 称号/成就/幻影榜八门禁，约 5.5 分钟）
-python validate.py            :: 数据校验器（十七项：七项数据表 + V27 技能/特效 + V28 成就/新怪/地图 + V29 阈值/精英/保底 + V30 稀有逃跑 + V31 称号表，上限 170）
+python -u tests/smoke_v29d2.py :: 全套门禁（v20→…→v29d1 回归链 + V2.9-D2 日常/周常/签到八门禁，约 4 分钟）
+python validate.py            :: 数据校验器（十八项：七项数据表 + V27 技能/特效 + V28 成就/新怪/地图 + V29 阈值/精英/保底 + V30 稀有逃跑 + V31 称号表 + V32 日常配置，上限 180）
 python tower.py               :: V2.5 无底洞爬塔 CLI（通关一次后解锁）
 ```

@@ -147,6 +147,16 @@ def check_v31():
     return not bad, bad
 
 
+def check_v32(cfg):
+    """V32-01 日常/周常/签到配置：need/gold>0、签到步长非负、保底符天数 1..7。"""
+    bad = [f"{s}.{k}" for s in ("daily", "weekly") for k in ("kills_need", "damage_need", "tower_need", "gold")
+           if not cfg.has_section(s) or cfg.getint(s, k, fallback=0) <= 0]
+    try: ck = [cfg.getint("checkin", k) for k in ("gold_base", "gold_step", "staff_day")]
+    except Exception: ck = None
+    if not ck or ck[0] < 0 or ck[1] < 0 or not 1 <= ck[2] <= 7: bad.append("[checkin]")
+    return not bad, bad
+
+
 def main():
     cfg = load_cfg()
     rows = [("1 掉落表部位/品质/概率合法", check_loot(cfg)),
@@ -157,7 +167,7 @@ def main():
             ("6 存档 v1→v%d 迁移" % save.SCHEMA, check_migrate()),
             ("7 金币收支对账", check_gold_flow(cfg)),
             ("8 技能必有解锁等级（V27-01）", check_skills(cfg)),
-            ("9 特效 tribe 合法（V27-02）", check_weapon_tribes())] + check_v28(cfg) + encounter.check_v29(cfg) + encounter.check_v30(cfg) + [("17 称号表合法（V31-01）", check_v31())]
+            ("9 特效 tribe 合法（V27-02）", check_weapon_tribes())] + check_v28(cfg) + encounter.check_v29(cfg) + encounter.check_v30(cfg) + [("17 称号表合法（V31-01）", check_v31()), ("18 日常/周常/签到配置（V32-01）", check_v32(cfg))]
     bad = sum(0 if ok else 1 for _, (ok, _) in rows)
     for name, (ok, detail) in rows:
         print(("✓" if ok else "✗"), name, ("" if ok else "  → %s" % detail))

@@ -156,19 +156,19 @@ check("v7→v8：新字段默认值齐全（achievements/codex_weapons/total_dam
       and d["codex_weapons"] == [] and d["total_damage"] == 0)
 os.remove("save.json")
 
-# ── 门禁6 回归：smoke_v27 + validate 十七项 + 行数纪律 + CLI 全通基线 ──
+# ── 门禁6 回归：smoke_v27 + validate 十八项 + 行数纪律 + CLI 全通基线 ──
 limits = {"engine.py": 225, "combat.py": 130, "tower.py": 100,
-          "validate.py": 170, "progress.py": 150}
+          "validate.py": 180, "progress.py": 150}
 bad_lines = [f"{f}={sum(1 for _ in open(f, encoding='utf-8'))}"
              for f, lim in limits.items()
              if sum(1 for _ in open(f, encoding="utf-8")) > lim]
-check("行数纪律（engine≤225、combat≤130、tower≤100、validate≤170、progress≤150）",
+check("行数纪律（engine≤225、combat≤130、tower≤100、validate≤180、progress≤150）",
       not bad_lines)
 if bad_lines:
     print("  超标:", bad_lines)
 r = subprocess.run([WB, "validate.py"], capture_output=True, text=True,
                    encoding="utf-8", env=ENV)
-check("validate 十七项全绿（V2.9-A 起含 V29-01/02/03；V2.9-B 起含 V30-01）（9 + V28-01/02/03）", r.returncode == 0 and r.stdout.count("✓") == 17)
+check("validate 十八项全绿（V2.9-A 起含 V29-01/02/03；V2.9-B 起含 V30-01）（9 + V28-01/02/03）", r.returncode == 0 and r.stdout.count("✓") == 18)
 r = subprocess.run([WB, "engine.py"], input="\n".join(["1"] * 500) + "\n",
                    capture_output=True, text=True, encoding="utf-8", env=ENV)
 after = json.load(open("save.json", encoding="utf-8"))

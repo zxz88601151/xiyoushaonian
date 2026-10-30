@@ -137,15 +137,15 @@ if runs != 12 or log_text.count("战报：") != 12:
 if os.path.exists(TMP):
     os.remove(TMP)
 
-# ── 门禁8：行数纪律 + validate 十七项 + smoke_v29b 全链 ──
+# ── 门禁8：行数纪律 + validate 十八项 + smoke_v29b 全链 ──
 limits = {"encounter.py": 170, "gui.py": 210, "gui_tower.py": 200, "gui_report.py": 60,
-          "combat.py": 130, "engine.py": 225, "tower.py": 100, "validate.py": 170}
+          "combat.py": 130, "engine.py": 225, "tower.py": 100, "validate.py": 180}
 bad_lines = [f"{f}={sum(1 for _ in open(f, encoding='utf-8'))}"
              for f, lim in limits.items() if sum(1 for _ in open(f, encoding="utf-8")) > lim]
 rv = subprocess.run([WB, "validate.py"], capture_output=True, text=True, encoding="utf-8", env=ENV)
 rr = subprocess.run([WB, "tests/smoke_v29b.py"], capture_output=True, text=True, encoding="utf-8", env=ENV)
-check("8 行数纪律 + validate 十七项 + v20→v29b 全链回归",
-      not bad_lines and rv.returncode == 0 and rv.stdout.count("✓") == 17
+check("8 行数纪律 + validate 十八项 + v20→v29b 全链回归",
+      not bad_lines and rv.returncode == 0 and rv.stdout.count("✓") == 18
       and rr.returncode == 0 and "全部通过" in rr.stdout and rr.stdout.count("✗") == 0)
 if bad_lines:
     print("  超标:", bad_lines)

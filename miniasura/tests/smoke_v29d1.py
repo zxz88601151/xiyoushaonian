@@ -56,8 +56,8 @@ for m in maps:
         if f["mon"].get("key") != "boss" and encounter.roll_kind(0, m["no"], fi) < 20:
             expect_elite += 1
         fi += 1
-check("1 变体计数：week0 全通精英数吻合 %d、稀有 0、schema10" % expect_elite,
-      data.get("schema") == 10 and data.get("elite_kills") == expect_elite
+check("1 变体计数：week0 全通精英数吻合 %d、稀有 0、schema%d" % (expect_elite, save.SCHEMA),
+      data.get("schema") == save.SCHEMA and data.get("elite_kills") == expect_elite
       and data.get("rare_kills") == 0)
 
 # ── 门禁2：kills 键不被污染（图鉴口径不变）──
@@ -126,7 +126,7 @@ check("6 幻影榜：低伤害/高回合不覆盖，更高伤害只换伤害不�
       better and r2["best_dealt"] == 900 and r2["best_dealt_mon"] == "白骨夫人"
       and r2["best_rounds"] == 1 and r2["best_rounds_mon"] == "火妖")
 
-# ── 门禁7：v9 档迁移不丢值 + validate 十七项 ──
+# ── 门禁7：v9 档迁移不丢值 + validate 十八项 ──
 v9 = {"schema": 9, "level": 22, "exp": 33, "hp": 210, "mp": 90, "attack": 71, "next": 5,
       "week": 1, "playtime": 1234, "gold": 456, "difficulty": 1, "protect": 2,
       "tower_best": 17, "tower_layer": 3, "maps_cleared": 10, "total_damage": 8888,
@@ -134,16 +134,19 @@ v9 = {"schema": 9, "level": 22, "exp": 33, "hp": 210, "mp": 90, "attack": 71, "n
       "codex_weapons": ["金箍棒"], "kills": {"huoyao": 4}, "quest_flags": {"m1": "done"}}
 m = save._migrate(dict(v9))
 kept = all(m.get(k) == v for k, v in v9.items() if k != "schema")
-check("7 v9→v10 迁移：四新字段就位且旧值一字未动",
-      kept and m["schema"] == 10 and m["elite_kills"] == 0 and m["rare_kills"] == 0
-      and m["title"] == "" and m["records"]["best_dealt"] == 0)
+check("7 v9→v%d 迁移：D1+D2 七新字段就位且旧值一字未动" % save.SCHEMA,
+      kept and m["schema"] == save.SCHEMA and m["elite_kills"] == 0 and m["rare_kills"] == 0
+      and m["title"] == "" and m["records"]["best_dealt"] == 0
+      and m["daily"] == {"date": "", "base": {}, "claimed": []}
+      and m["weekly"] == {"week": "", "base": {}, "claimed": []}
+      and m["checkin"] == {"last": "", "streak": 0, "total": 0})
 rv = subprocess.run([WB, "validate.py"], capture_output=True, text=True, encoding="utf-8", env=ENV)
-check("7b validate 十七项全绿", rv.returncode == 0 and rv.stdout.count("✓") == 17)
+check("7b validate 十八项全绿", rv.returncode == 0 and rv.stdout.count("✓") == 18)
 if rv.returncode:
     print(rv.stdout[-800:])
 
 # ── 门禁8：行数纪律 + v20→v29c 全链回归 ──
-limits = {"progress.py": 110, "save.py": 130, "engine.py": 225, "validate.py": 170,
+limits = {"progress.py": 110, "save.py": 140, "engine.py": 225, "validate.py": 180,
           "gui_codex.py": 120, "gui_hub.py": 65, "tower.py": 100,
           "encounter.py": 170, "combat.py": 130}
 bad_lines = [f"{f}={sum(1 for _ in open(f, encoding='utf-8'))}"

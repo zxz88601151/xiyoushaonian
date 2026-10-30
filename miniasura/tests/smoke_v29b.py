@@ -204,15 +204,15 @@ check("6 回归：week0 Lv25/金币798/maps10；tower 无稀有且 fled→escape
       baseline["maps_cleared"] == 10 and baseline["level"] == 25 and baseline["gold"] == 798
       and "战报：" in r.stdout and tower_ok)
 
-# ── 门禁7：行数 + validate 十七项 + smoke_v29a 全链 ──
+# ── 门禁7：行数 + validate 十八项 + smoke_v29a 全链 ──
 limits = {"engine.py": 225, "combat.py": 130, "encounter.py": 170,
-          "tower.py": 100, "loot.py": 100, "validate.py": 170}
+          "tower.py": 100, "loot.py": 100, "validate.py": 180}
 bad_lines = [f"{f}={sum(1 for _ in open(f, encoding='utf-8'))}"
              for f, lim in limits.items() if sum(1 for _ in open(f, encoding="utf-8")) > lim]
 rv = subprocess.run([WB, "validate.py"], capture_output=True, text=True, encoding="utf-8", env=ENV)
 rr = subprocess.run([WB, "tests/smoke_v29a.py"], capture_output=True, text=True, encoding="utf-8", env=ENV)
-check("7 行数纪律 + validate 十七项 + smoke_v29a 19/19 全链回归",
-      not bad_lines and rv.returncode == 0 and rv.stdout.count("✓") == 17
+check("7 行数纪律 + validate 十八项 + smoke_v29a 19/19 全链回归",
+      not bad_lines and rv.returncode == 0 and rv.stdout.count("✓") == 18
       and rr.returncode == 0 and "全部通过" in rr.stdout and rr.stdout.count("✗") == 0)
 if bad_lines:
     print("  超标:", bad_lines)
