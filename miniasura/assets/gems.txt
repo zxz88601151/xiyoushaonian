@@ -1,0 +1,6 @@
+# V3.0-A 宝石表：key|名称|属性|每级数值（4 种 / 5 级封顶，G5-G6）
+# 属性只用 gear.totals 白名单内的口径：atk/hp/def 走平铺，crit 走暴击率（百分点）
+atk|赤火石|atk|4
+hp|青木石|hp|20
+def|玄土石|def|1
+crit|白晶石|crit|0.8

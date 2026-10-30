@@ -23,8 +23,10 @@ def grant_win(cfg, fight, player, storage, io, difficulty):
     roll(cfg, fight["key"], player, storage, io, difficulty=difficulty)
     if fight.get("elite"):
         roll(cfg, "elite", player, storage, io, difficulty=difficulty)
+        player["shard"] = player.get("shard", 0) + cfg.getint("gem", "shard_per_elite", fallback=0)   # V3.0-A
     if fight.get("rare"):
         roll(cfg, "rare", player, storage, io, difficulty=difficulty)
+        player["shard"] = player.get("shard", 0) + cfg.getint("gem", "shard_per_rare", fallback=0)     # V3.0-A
 
 
 def load_table(cfg):

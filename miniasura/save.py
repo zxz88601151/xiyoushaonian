@@ -11,7 +11,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PATH = os.path.join(HERE, "save.json")
 _USER = ""
 
-SCHEMA = 11
+SCHEMA = 12
 SLOT_KEYS = ("weapon", "helm", "armor", "belt", "boots")
 
 
@@ -64,6 +64,10 @@ def _migrate(old):
     old.setdefault("daily", {"date": "", "base": {}, "claimed": []})       # V2.9-D2：日常
     old.setdefault("weekly", {"week": "", "base": {}, "claimed": []})      # V2.9-D2：周常
     old.setdefault("checkin", {"last": "", "streak": 0, "total": 0})       # V2.9-D2：签到
+    old.setdefault("shard", 0)            # V3.0-A：宝石碎片（不占格，G3）
+    old.setdefault("gems", [])            # V3.0-A：宝石栏（独立于装备背包）
+    old.setdefault("attr", {"spent": {"atk": 0, "hp": 0, "def": 0, "crit": 0}})   # V3.0-A：属性点
+    old.setdefault("set_seen", [])        # V3.0-A：见过的套装 key（纯记录）
     for it in list(old.get("inventory", [])) + list(old.get("storage", [])):
         if isinstance(it, dict):
             it.setdefault("enh", 0)        # V2.4：旧装备补强化等级
@@ -122,6 +126,9 @@ def write(player, next_index, week, playtime, maps_cleared=0,
         "records": player.get("records") or {"best_dealt": 0, "best_dealt_mon": "",
                                              "best_rounds": 0, "best_rounds_mon": ""},
         "daily": prev.get("daily") or {}, "weekly": prev.get("weekly") or {}, "checkin": prev.get("checkin") or {},
+        "shard": player.get("shard", 0), "gems": player.get("gems") or [],
+        "attr": player.get("attr") or {"spent": {"atk": 0, "hp": 0, "def": 0, "crit": 0}},
+        "set_seen": player.get("set_seen") or [],
     })
 
 

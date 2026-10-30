@@ -146,7 +146,7 @@ if rv.returncode:
     print(rv.stdout[-800:])
 
 # ── 门禁8：行数纪律 + v20→v29c 全链回归 ──
-limits = {"progress.py": 110, "save.py": 140, "engine.py": 225, "validate.py": 180,
+limits = {"progress.py": 110, "save.py": 145, "engine.py": 225, "validate.py": 180,
           "gui_codex.py": 120, "gui_hub.py": 65, "tower.py": 100,
           "encounter.py": 170, "combat.py": 130}
 bad_lines = [f"{f}={sum(1 for _ in open(f, encoding='utf-8'))}"

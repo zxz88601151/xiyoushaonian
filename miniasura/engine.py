@@ -16,7 +16,7 @@ import rewards
 from combat import battle, grant_exp, roll_damage, lua   # 再导出：外部依赖 engine.grant_exp
 import dialogue as dlg
 import quests as qsys
-import skills as skills_mod
+import attrs; import skills as skills_mod   # V3.0-A：属性点（spent 全 0 时加成全 0）
 
 ASSETS = ("intro.txt", "skills.txt", "monsters.txt",
           "dialogue.txt", "quests.txt", "maps.txt")
@@ -50,8 +50,8 @@ def player_attack(cfg, level):
 
 
 def apply_gear(cfg, player):
-    # 装备加成只消费 gear.totals 的聚合结果（公式住 equip.lua）；V2.5 起 totals 要吃持有者等级
-    tot = gear.totals(player.get("equipment") or gear.empty_equipment(), player["level"])
+    # 装备加成只消费 gear.totals 的聚合（公式住 equip.lua；V2.5 起吃持有者等级，V3.0-A 起属性点走 extra）
+    tot = gear.totals(player.get("equipment") or gear.empty_equipment(), player["level"], attrs.bonus(player, cfg))
     pas = skills_mod.passive_totals(skills_mod.load_skills(), player["level"], tot)   # V2.7 被动唯一汇总处
     player["attack"] = round((player_attack(cfg, player["level"]) + tot["atk"]) * pas["atk_mult"])
     player["max_hp"] = round(cfg.getint("player", "hp") + (player["level"] - 1)

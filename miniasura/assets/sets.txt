@@ -1,0 +1,4 @@
+# V3.0-A 套装表：key|名称|槽位|2 件效果|4 件效果（G7：4 件不叠 2 件，取高者）
+# 效果写法 key:值;key:值 —— 平铺键 atk/hp/def/crit/critdmg/leech，百分比键 atkp/hpp
+huoyan|火焰套|weapon,helm,armor,belt|atk:12|critdmg:30;leech:3
+xingzhe|行者套|helm,armor,belt,boots|hp:120|def:6;hpp:10

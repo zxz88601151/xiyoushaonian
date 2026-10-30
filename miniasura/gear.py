@@ -10,6 +10,8 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "lesson03"))
 import mypack
+import gem    # V3.0-A：宝石（gem 只依赖 mypack，无循环导入）
+import sets   # V3.0-A：套装（同上）
 
 LUA = os.path.join(HERE, "..", "tools", "lua-5.1.5", "lua.exe")
 EQUIP_LUA = os.path.join(HERE, "scripts", "equip.lua")
@@ -104,6 +106,10 @@ def generate(slot, lv, quality, rows=None, rng=random):
         eff = load_weapon_effects().get(item["name"])
         if eff:
             item["effect"] = {"kind": eff[0], "param": eff[1]}
+    if q == 2:                                   # V3.0-A：紫装按稳定种子判套装件（不吃随机流，G8）
+        key = sets.roll_set(item)
+        if key:
+            item["set"] = key
     return item
 
 
@@ -173,9 +179,10 @@ def item_line(item):
     return "  ".join(parts)
 
 
-def totals(equipment, owner_level=1):
+def totals(equipment, owner_level=1, extra=None):
     """聚合穿戴加成（细案 §1 簿记约定：百分比词条以 主属性+平铺 为基数）。
-    owner_level：无级别武器（scaling:"owner"）按持有者等级算攻击——本期架构上唯一的有意破例。"""
+    owner_level：无级别武器（scaling:"owner"）按持有者等级算攻击——本期架构上唯一的有意破例。
+    extra：V3.0-A 属性点加成（player 派生，不是装备派生，故由调用方传入）。"""
     base = {"atk": 0.0, "hp": 0.0, "def": 0.0, "dodge": 0.0}
     pct = {"atk": 0.0, "hp": 0.0}
     add = {"crit": 0.0, "critdmg": 0.0, "leech": 0.0, "exp": 0.0}
@@ -214,6 +221,15 @@ def totals(equipment, owner_level=1):
             add[kind] += param * 100
         elif kind:
             raise ValueError(f"未知武器特效 kind: {kind}（weapon_effects.txt 白名单不对齐）")
+    # V3.0-A：宝石 / 套装 / 属性点三源平铺进基数——都在百分比放大之前，与词条口径一致（三层可分别断言）
+    gb, sb, ex = gem.bonus(equipment), sets.bonus(equipment), (extra or {})
+    for k in ("atk", "hp", "def"):
+        base[k] += gb.get(k, 0.0) + sb.get(k, 0.0) + ex.get(k, 0.0)
+    add["crit"] += gb.get("crit", 0.0) + sb.get("crit", 0.0) + ex.get("crit", 0.0)
+    add["critdmg"] += sb.get("critdmg", 0.0)
+    add["leech"] += sb.get("leech", 0.0)
+    pct["atk"] += sb.get("atkp", 0.0)
+    pct["hp"] += sb.get("hpp", 0.0)
     for k in ("atk", "hp"):
         base[k] *= 1 + pct[k] / 100
     for k in mult_pct:                        # 武器谱百分比特效乘区（在词条%之后）

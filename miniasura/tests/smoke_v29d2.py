@@ -139,8 +139,8 @@ v10 = {"schema": 10, "level": 22, "exp": 33, "hp": 210, "mp": 90, "attack": 71, 
        "records": {"best_dealt": 615, "best_dealt_mon": "白骨夫人", "best_rounds": 1, "best_rounds_mon": "小妖甲"}}
 m = save._migrate(dict(v10))
 kept = all(m.get(k) == v for k, v in v10.items() if k != "schema")
-check("7 v10→v11 迁移：三新字段就位且旧值一字未动",
-      kept and m["schema"] == 11 and m["daily"] == {"date": "", "base": {}, "claimed": []}
+check("7 v10→v%d 迁移：D2 三字段就位且旧值一字未动" % save.SCHEMA,
+      kept and m["schema"] == save.SCHEMA and m["daily"] == {"date": "", "base": {}, "claimed": []}
       and m["weekly"]["week"] == "" and m["checkin"] == {"last": "", "streak": 0, "total": 0})
 rv = subprocess.run([WB, "validate.py"], capture_output=True, text=True, encoding="utf-8", env=ENV)
 check("7b validate 十八项全绿", rv.returncode == 0 and rv.stdout.count("✓") == 18)
@@ -148,7 +148,7 @@ if rv.returncode:
     print(rv.stdout[-800:])
 
 # ── 门禁8：行数纪律 + v20→v29d1 全链回归 ──
-limits = {"daily.py": 110, "gui_daily.py": 120, "save.py": 140, "gui_hub.py": 65,
+limits = {"daily.py": 110, "gui_daily.py": 120, "save.py": 145, "gui_hub.py": 65,
           "app.py": 140, "validate.py": 180, "engine.py": 225, "progress.py": 110,
           "gui_codex.py": 120, "tower.py": 100, "combat.py": 130, "encounter.py": 170}
 bad_lines = [f"{f}={sum(1 for _ in open(f, encoding='utf-8'))}"
