@@ -1,4 +1,4 @@
-# MiniAsura 存档外围 —— schema 9（V2.0 §3 + V2.1 §2 + V2.2 §3 + V2.3 金币/难度 + V2.4 强化/保底符 + V2.5 爬塔 + V2.8 图鉴/成就/统计 + V2.9-A 保底计数）。
+# MiniAsura 存档外围 —— schema 10（V2.0 §3 + V2.1 §2 + V2.2 §3 + V2.3 金币/难度 + V2.4 强化/保底符 + V2.5 爬塔 + V2.8 图鉴/成就/统计 + V2.9-A 保底计数 + V2.9-D1 称号/变体击杀/幻影榜）。
 # 路径由登录链经 set_path() 注入；engine 只调 load/write，不认识账号。
 # CLI dev 模式（python engine.py）不注入 = 用默认路径，v1 行为保持。
 import json
@@ -10,7 +10,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PATH = os.path.join(HERE, "save.json")
 _USER = ""
 
-SCHEMA = 9
+SCHEMA = 10
 SLOT_KEYS = ("weapon", "helm", "armor", "belt", "boots")
 
 
@@ -55,6 +55,11 @@ def _migrate(old):
     old.setdefault("codex_weapons", [])    # V2.8：曾经拥有过的武器名（卖出不灭灯）
     old.setdefault("total_damage", 0)      # V2.8：累计总伤害
     old.setdefault("staff_pity", 0)        # V2.9-A：无级别保底计数（跨周目继承）
+    old.setdefault("elite_kills", 0)       # V2.9-D1：精英击杀累计（跨周目继承，与 kills 分离）
+    old.setdefault("rare_kills", 0)        # V2.9-D1：稀有击杀累计
+    old.setdefault("title", "")            # V2.9-D1：当前佩戴称号 id（空串=无）
+    old.setdefault("records", {"best_dealt": 0, "best_dealt_mon": "",
+                               "best_rounds": 0, "best_rounds_mon": ""})   # V2.9-D1：幻影榜
     for it in list(old.get("inventory", [])) + list(old.get("storage", [])):
         if isinstance(it, dict):
             it.setdefault("enh", 0)        # V2.4：旧装备补强化等级
@@ -85,7 +90,8 @@ def write(player, next_index, week, playtime, maps_cleared=0,
     norm = {"level": player["level"], "kills": kills, "maps_cleared": maps_cleared,
             "week": week, "tower_best": player.get("tower_best", 0), "codex_weapons": codex,
             "inventory": player.get("inventory", []), "storage": storage or [],
-            "equipment": player.get("equipment", {})}
+            "equipment": player.get("equipment", {}),
+            "elite_kills": player.get("elite_kills", 0), "rare_kills": player.get("rare_kills", 0)}
     ach = sorted(set(prev.get("achievements", [])) | progress.evaluate(norm))
     write_raw({
         "schema": SCHEMA, "user": _USER,
@@ -107,6 +113,10 @@ def write(player, next_index, week, playtime, maps_cleared=0,
         "codex_weapons": codex,
         "total_damage": player.get("total_damage", 0),
         "staff_pity": player.get("staff_pity", 0),
+        "elite_kills": player.get("elite_kills", 0), "rare_kills": player.get("rare_kills", 0),
+        "title": player.get("title", ""),
+        "records": player.get("records") or {"best_dealt": 0, "best_dealt_mon": "",
+                                             "best_rounds": 0, "best_rounds_mon": ""},
     })
 
 

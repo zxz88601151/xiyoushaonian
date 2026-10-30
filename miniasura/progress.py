@@ -7,7 +7,27 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "lesson03"))
 import mypack
 
-COND_KINDS = ("kills", "maps", "level", "arsenal", "tower", "enhance")
+COND_KINDS = ("kills", "maps", "level", "arsenal", "tower", "enhance",
+              "elite_kills", "rare_kills")   # V2.9-D1：变体击杀两种条件
+
+
+def load_titles():
+    """titles.txt（id|名称|成就id|描述）→ 列表；加称号 = 加数据行，不改代码（R3）。"""
+    text = mypack.read(os.path.join(HERE, "assets.mpak"), "titles.txt").decode("utf-8")
+    return [dict(zip(("id", "name", "ach", "desc"), line.strip().split("|")))
+            for line in text.splitlines() if line.strip() and not line.strip().startswith("#")]
+
+
+def on_battle_win(player, fight, rep):
+    """V2.9-D1：主线胜利结算——变体击杀计数 + 幻影榜；只改 player 不写盘（塔不调用）。"""
+    player["elite_kills"] = player.get("elite_kills", 0) + (1 if fight.get("elite") else 0)
+    player["rare_kills"] = player.get("rare_kills", 0) + (1 if fight.get("rare") else 0)
+    rec, mon = dict(player.get("records") or {}), (fight.get("mon") or {}).get("name", "")
+    dealt, rounds = rep.get("dealt", 0), rep.get("rounds", 0)
+    if dealt > rec.get("best_dealt", 0): rec.update(best_dealt=dealt, best_dealt_mon=mon)
+    if rounds and (not rec.get("best_rounds") or rounds < rec["best_rounds"]):
+        rec.update(best_rounds=rounds, best_rounds_mon=mon)
+    player["records"] = rec
 
 
 def load_achievements():
@@ -65,7 +85,8 @@ def evaluate(norm):
         maps = max(maps, 10)
     stat = {"kills": kills_total(norm.get("kills")), "maps": maps,
             "level": norm.get("level", 1), "arsenal": len(norm.get("codex_weapons") or []),
-            "tower": norm.get("tower_best", 0), "enhance": max_enh(norm)}
+            "tower": norm.get("tower_best", 0), "enhance": max_enh(norm),
+            "elite_kills": norm.get("elite_kills", 0), "rare_kills": norm.get("rare_kills", 0)}
     return {a["id"] for a in load_achievements() if stat.get(a["kind"], 0) >= a["need"]}
 
 

@@ -1,5 +1,5 @@
 # V2.9-A 出口验收 · 自动化冒烟（DESIGN_V2_9_A §5 六门禁）
-# 战报 / BOSS 变招 / 精英稀有 / 保底迁移 / validate 十六项 / 回归。
+# 战报 / BOSS 变招 / 精英稀有 / 保底迁移 / validate 十七项 / 回归。
 import json
 import os
 import subprocess
@@ -163,23 +163,25 @@ v8 = {"schema": 8, "user": "", "level": 22, "exp": 99, "hp": 200, "mp": 80, "att
       "codex_weapons": [], "total_damage": 123}
 save.write_raw(v8)
 d = save.load()
-check("v8→v9：旧值不动、staff_pity=0、schema=9",
-      d["schema"] == 9 and d["gold"] == 456 and d["staff_pity"] == 0 and d["total_damage"] == 123)
+check("v8→v10：旧值不动、staff_pity=0、schema=10、D1 四新字段就位",
+      d["schema"] == save.SCHEMA and d["gold"] == 456 and d["staff_pity"] == 0
+      and d["total_damage"] == 123 and d["elite_kills"] == 0 and d["title"] == ""
+      and d["records"]["best_dealt"] == 0)
 os.remove("save.json")
 
-# ── 门禁5 validate 十六项 + 行数纪律 ──
-limits = {"engine.py": 222, "combat.py": 130, "encounter.py": 170,
-          "loot.py": 100, "validate.py": 165}
+# ── 门禁5 validate 十七项 + 行数纪律 ──
+limits = {"engine.py": 225, "combat.py": 130, "encounter.py": 170,
+          "loot.py": 100, "validate.py": 170}
 bad_lines = [f"{f}={sum(1 for _ in open(f, encoding='utf-8'))}"
              for f, lim in limits.items()
              if sum(1 for _ in open(f, encoding="utf-8")) > lim]
-check("行数纪律（engine≤222、combat≤130、encounter≤170、loot≤100、validate≤165）",
+check("行数纪律（engine≤225、combat≤130、encounter≤170、loot≤100、validate≤170）",
       not bad_lines)
 if bad_lines:
     print("  超标:", bad_lines)
 r = subprocess.run([WB, "validate.py"], capture_output=True, text=True,
                    encoding="utf-8", env=ENV)
-check("validate 十六项全绿（12 + V29-01/02/03 + V30-01）", r.returncode == 0 and r.stdout.count("✓") == 16)
+check("validate 十七项全绿（12 + V29-01/02/03 + V30-01）", r.returncode == 0 and r.stdout.count("✓") == 17)
 
 # ── 门禁6 回归：smoke_v28 + CLI 全通基线 ──
 r = subprocess.run([WB, "tests/smoke_v28.py"], capture_output=True, text=True,

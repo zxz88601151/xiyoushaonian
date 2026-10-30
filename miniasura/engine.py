@@ -8,7 +8,7 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "lesson03"))
 import mypack
-import save; import encounter
+import save; import encounter; import progress
 import gear
 import combat
 import loot
@@ -119,7 +119,7 @@ def run_game(io):
     state = save.load()
     week = base_playtime = maps_cleared = start = 0
     difficulty, tracker = None, None
-    gold_carry = protect_carry = tower_carry = 0; dmg_carry = 0; pity_carry = 0
+    gold_carry = protect_carry = tower_carry = 0; dmg_carry = 0; pity_carry = 0; carry = {}
     storage = []
     if state and state.get("next", 0) >= total_fights():
         io.say(f"\n（检测到已通关的存档：第 {state.get('week', 0)} 周目已完结——开启第 {state.get('week', 0) + 1} 周目，从头再来！）")
@@ -131,6 +131,7 @@ def run_game(io):
         difficulty = loot.ask_difficulty(io)   # 新周目重问难度
         gold_carry, protect_carry = state.get("gold", 0), state.get("protect", 0); dmg_carry = state.get("total_damage", 0); pity_carry = state.get("staff_pity", 0)  # 金币/保底符/总伤害/保底计数跨周目继承
         tower_carry = state.get("tower_best", 0)      # V2.5：爬塔最高层跨周目继承
+        carry = state        # V2.9-D1：称号/变体计数/幻影榜跨周目继承（state 置空后仍可取）
         state = None        # 周目重开：等级回起点；任务/仓库/金币继承
     elif state:
         io.say(f"\n（读取存档：Lv.{state['level']}，已推进至第 {state.get('maps_cleared', 0) + 1} 图）")
@@ -147,7 +148,8 @@ def run_game(io):
                   "inventory": state.get("inventory", []),
                   "equipment": state.get("equipment") or gear.empty_equipment(),
                   "potions": state.get("potions") or {"hp": 0, "mp": 0},
-                  "tower_best": state.get("tower_best", 0), "tower_layer": state.get("tower_layer", 0), "total_damage": state.get("total_damage", 0), "staff_pity": state.get("staff_pity", 0)}
+                  "tower_best": state.get("tower_best", 0), "tower_layer": state.get("tower_layer", 0), "total_damage": state.get("total_damage", 0), "staff_pity": state.get("staff_pity", 0),
+                  "elite_kills": state.get("elite_kills", 0), "rare_kills": state.get("rare_kills", 0), "title": state.get("title", ""), "records": dict(state.get("records") or {})}
         apply_gear(cfg, player)
         player["hp"] = min(player["hp"], player["max_hp"])
     if not state:
@@ -155,6 +157,7 @@ def run_game(io):
                   "mp": cfg.getint("player", "mp"), "gold": gold_carry, "protect": protect_carry,
                   "inventory": [], "equipment": gear.empty_equipment(),
                   "potions": {"hp": 0, "mp": 0}, "tower_best": tower_carry, "tower_layer": 0, "total_damage": dmg_carry, "staff_pity": pity_carry}
+        player.update({k: carry.get(k, d) for k, d in (("title", ""), ("elite_kills", 0), ("rare_kills", 0), ("records", {}))})   # V2.9-D1：跨周目继承（新档取默认）
         tracker = tracker or qsys.Tracker(qsys.load(texts["quests.txt"]))
         apply_gear(cfg, player)
         player["hp"] = player["max_hp"]          # 新档满血进本
@@ -200,7 +203,7 @@ def run_game(io):
             if result == "win":
                 for q in tracker.on_event("win", f["key"]):
                     rewards.apply_rewards(cfg, player, io, [q], storage)
-                loot.grant_win(cfg, f, player, storage, io, difficulty); encounter.print_report(io, rep)
+                loot.grant_win(cfg, f, player, storage, io, difficulty); encounter.print_report(io, rep); progress.on_battle_win(player, f, rep)
             fi += 1
             persist(fi, maps_cleared)
         for q in tracker.on_event("map", m["no"]):

@@ -1,0 +1,10 @@
+# MiniAsura V2.9-D1 称号表 —— id|名称|成就id|描述（R3：与成就 1:1，纯荣誉不加属性）
+# 解锁条件就是对应成就已解锁；validate V31-01 校验引用存在与 id 唯一。
+first_blood|初出茅庐|first_blood|初次出手便见血
+clear_all|西行者|clear_all|十图走尽
+max_level|齐天大圣|max_level|修到封顶
+full_arsenal|兵器谱主|full_arsenal|十器尽收
+tower30|登塔人|tower30|三十层之上
+enhance10|炉火纯青|enhance10|一件装备强化到 +10
+elite_hunter|猎妖人|elite_hunter|十只精英伏诛
+rare_hunter|捕金者|rare_hunter|三只稀有落袋

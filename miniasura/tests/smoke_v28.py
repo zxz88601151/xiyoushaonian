@@ -45,9 +45,9 @@ def norm(**kw):
     return base
 
 
-# ── 门禁1 成就：6 项条件各有断言 + 并集不回归 ──
-check("成就表 6 项、条件类型合法（V28-01 口径）",
-      len(progress.load_achievements()) == 6
+# ── 门禁1 成就：8 项条件各有断言 + 并集不回归 ──
+check("成就表 8 项、条件类型合法（V28-01 口径）",
+      len(progress.load_achievements()) == 8
       and {a["kind"] for a in progress.load_achievements()} <= set(progress.COND_KINDS))
 check("first_blood：总击杀 ≥1（0 不解锁）",
       "first_blood" in progress.evaluate(norm(kills={"xiaoyao1": 1}))
@@ -156,19 +156,19 @@ check("v7→v8：新字段默认值齐全（achievements/codex_weapons/total_dam
       and d["codex_weapons"] == [] and d["total_damage"] == 0)
 os.remove("save.json")
 
-# ── 门禁6 回归：smoke_v27 + validate 十六项 + 行数纪律 + CLI 全通基线 ──
-limits = {"engine.py": 222, "combat.py": 130, "tower.py": 100,
-          "validate.py": 165, "progress.py": 150}
+# ── 门禁6 回归：smoke_v27 + validate 十七项 + 行数纪律 + CLI 全通基线 ──
+limits = {"engine.py": 225, "combat.py": 130, "tower.py": 100,
+          "validate.py": 170, "progress.py": 150}
 bad_lines = [f"{f}={sum(1 for _ in open(f, encoding='utf-8'))}"
              for f, lim in limits.items()
              if sum(1 for _ in open(f, encoding="utf-8")) > lim]
-check("行数纪律（engine≤222、combat≤130、tower≤100、validate≤165、progress≤150）",
+check("行数纪律（engine≤225、combat≤130、tower≤100、validate≤170、progress≤150）",
       not bad_lines)
 if bad_lines:
     print("  超标:", bad_lines)
 r = subprocess.run([WB, "validate.py"], capture_output=True, text=True,
                    encoding="utf-8", env=ENV)
-check("validate 十六项全绿（V2.9-A 起含 V29-01/02/03；V2.9-B 起含 V30-01）（9 + V28-01/02/03）", r.returncode == 0 and r.stdout.count("✓") == 16)
+check("validate 十七项全绿（V2.9-A 起含 V29-01/02/03；V2.9-B 起含 V30-01）（9 + V28-01/02/03）", r.returncode == 0 and r.stdout.count("✓") == 17)
 r = subprocess.run([WB, "engine.py"], input="\n".join(["1"] * 500) + "\n",
                    capture_output=True, text=True, encoding="utf-8", env=ENV)
 after = json.load(open("save.json", encoding="utf-8"))

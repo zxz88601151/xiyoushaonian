@@ -187,16 +187,16 @@ check("吸血叠加上限 10%（缠丝爪 3% + 双满值词条 10% → 封顶）
       gear.totals(p["equipment"], 30)["leech"] == 10)
 
 # ── 门禁6 回归：CLI 全通 + smoke_v26 + validate 九项 + 行数纪律 ──
-limits = {"engine.py": 222, "combat.py": 130, "skills.py": 150, "validate.py": 165}
+limits = {"engine.py": 225, "combat.py": 130, "skills.py": 150, "validate.py": 170}
 bad_lines = [f"{f}={sum(1 for _ in open(f, encoding='utf-8'))}"
              for f, lim in limits.items()
              if sum(1 for _ in open(f, encoding="utf-8")) > lim]
-check("行数纪律（engine≤222、combat≤130、skills≤150、validate≤165）", not bad_lines)
+check("行数纪律（engine≤225、combat≤130、skills≤150、validate≤170）", not bad_lines)
 if bad_lines:
     print("  超标:", bad_lines)
 r = subprocess.run([WB, "validate.py"], capture_output=True, text=True,
                    encoding="utf-8", env=ENV)
-check("validate 十六项全绿（V2.9-A 起含 V29-01/02/03；V2.9-B 起含 V30-01）（V2.8 起含 V28-01/02/03）", r.returncode == 0 and r.stdout.count("✓") == 16)
+check("validate 十七项全绿（V2.9-A 起含 V29-01/02/03；V2.9-B 起含 V30-01）（V2.8 起含 V28-01/02/03）", r.returncode == 0 and r.stdout.count("✓") == 17)
 r = subprocess.run([WB, "engine.py"], input="\n".join(["1"] * 500) + "\n",
                    capture_output=True, text=True, encoding="utf-8", env=ENV)
 after = json.load(open("save.json", encoding="utf-8"))

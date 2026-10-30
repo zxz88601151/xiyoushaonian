@@ -79,7 +79,8 @@ def check_migrate():
     d = save._migrate({"cleared": True, "level": 14, "exp": 0, "hp": 150,
                        "mp": 100, "attack": 57, "next": 0})
     need = ("schema", "week", "gold", "difficulty", "protect", "tower_best", "tower_layer", "inventory",
-            "equipment", "quest_flags", "storage", "achievements", "codex_weapons", "total_damage", "staff_pity")
+            "equipment", "quest_flags", "storage", "achievements", "codex_weapons", "total_damage", "staff_pity",
+            "elite_kills", "rare_kills", "title", "records")   # V2.9-D1 四键
     miss = [k for k in need if k not in d]
     return not miss and d["schema"] == save.SCHEMA and d["week"] == 1, miss
 
@@ -122,7 +123,7 @@ def check_weapon_tribes():
 def check_v28(cfg):
     """V28-01 成就条件合法 / V28-02 新怪三件套 / V28-03 地图 key 存在 + 武器谱口径一致。"""
     ach, keys = data_rows("achievements.txt"), {l.split("|")[0] for l in data_rows("monsters.txt")}
-    legal = {"kills", "maps", "level", "arsenal", "tower", "enhance"}
+    legal = {"kills", "maps", "level", "arsenal", "tower", "enhance", "elite_kills", "rare_kills"}
     bad1 = [l for l in ach if len(l.split("|")) != 5 or l.split("|")[3] not in legal
             or int(l.split("|")[4]) <= 0]
     bad2 = [k for k in ("xiabing", "xiejian", "huoyao") if not cfg.has_section("monster." + k)
@@ -137,6 +138,15 @@ def check_v28(cfg):
             ("12 地图 key 与武器谱口径（V28-03）", (not bad3, bad3))]
 
 
+def check_v31():
+    """V31-01 称号表合法：4 列、id 唯一、引用的成就存在、名称与描述非空。"""
+    ach, rows = {l.split("|")[0] for l in data_rows("achievements.txt")}, data_rows("titles.txt")
+    ids = [l.split("|")[0] for l in rows]
+    bad = [l for l in rows if len(l.split("|")) != 4 or l.split("|")[2] not in ach or not l.split("|")[1].strip() or not l.split("|")[3].strip()]
+    if len(ids) != len(set(ids)): bad.append("称号 id 重复")
+    return not bad, bad
+
+
 def main():
     cfg = load_cfg()
     rows = [("1 掉落表部位/品质/概率合法", check_loot(cfg)),
@@ -147,7 +157,7 @@ def main():
             ("6 存档 v1→v%d 迁移" % save.SCHEMA, check_migrate()),
             ("7 金币收支对账", check_gold_flow(cfg)),
             ("8 技能必有解锁等级（V27-01）", check_skills(cfg)),
-            ("9 特效 tribe 合法（V27-02）", check_weapon_tribes())] + check_v28(cfg) + encounter.check_v29(cfg) + encounter.check_v30(cfg)
+            ("9 特效 tribe 合法（V27-02）", check_weapon_tribes())] + check_v28(cfg) + encounter.check_v29(cfg) + encounter.check_v30(cfg) + [("17 称号表合法（V31-01）", check_v31())]
     bad = sum(0 if ok else 1 for _, (ok, _) in rows)
     for name, (ok, detail) in rows:
         print(("✓" if ok else "✗"), name, ("" if ok else "  → %s" % detail))
